@@ -10,7 +10,7 @@ const CALLOUTS = [
   { id: 'casing', anchor: 'casing', title: 'Casing', detail: 'Light scuffs · no cracks', status: 'Noted', dy: 44 },
   { id: 'displayI', anchor: 'display', title: 'Display', detail: 'Glass intact', status: 'Checked', dir: 'l' },
   { id: 'battery', anchor: 'battery', title: 'Battery', detail: '91% health · 312 cycles', status: 'Testing', pass: 'Pass', dy: 40 },
-  { id: 'ssd', anchor: 'ssd', title: 'Storage', detail: 'SMART healthy · 97% life', status: 'Testing', pass: 'Pass', dy: 30 },
+  { id: 'ssd', anchor: 'ssd', title: 'Storage', detail: 'SMART healthy · 97% life', status: 'Testing', pass: 'Pass', dy: 30, desktopOnly: true },
   { id: 'ram', anchor: 'ram', title: 'Memory', detail: '2 × 8 GB · 0 errors', status: 'Testing', pass: 'Pass', dir: 'l', desktopOnly: true },
   { id: 'fan', anchor: 'fan', title: 'CPU & thermals', detail: '68 °C peak under load', status: 'Testing', pass: 'Pass', desktopOnly: true },
   { id: 'keys', anchor: 'keys', title: 'Keyboard', detail: '77 / 77 keys registered', status: 'Testing', pass: 'Pass' },
@@ -51,10 +51,48 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
 
   // hero pose + framing
   const stageShift = mobile ? 0 : 0.17;
+  const stageShiftY = mobile ? 0.2 : 0;
   Object.assign(S, { py: 0.55, rx: 0.12, ry: -0.78, rz: 0.1 });
   S.shiftX = mobile ? 0 : 0.21;
-  S.shiftY = mobile ? 0.2 : 0;
+  S.shiftY = stageShiftY;
   Object.assign(S.cam, SHOTS.hero);
+
+  // ---- safe areas the laptop must stay inside (see auto-framing in bench.js) ----
+  const nav = document.querySelector('[data-nav]');
+  const heroEl = document.querySelector('.hero');
+  const heroTitle = document.querySelector('.hero__title');
+  const rects = { hero: null, stage: [] };
+  function measureRects() {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const navH = nav.offsetHeight || (mobile ? 64 : 76);
+    const heroTop = heroEl.getBoundingClientRect().top;
+    const rel = (el) => el.getBoundingClientRect().top - heroTop - (gsap.getProperty(el, 'y') || 0);
+    if (mobile) {
+      // phones: the free band between the nav and the hero copy
+      const y1 = Math.max(navH + 120, rel(heroCopy) - 24);
+      rects.hero = { x0: 14, x1: W - 14, y0: navH + 4, y1 };
+    } else {
+      // desktop: right of the headline (measured on the text, not its box)
+      const range = document.createRange();
+      range.selectNodeContents(heroTitle);
+      const right = Math.max(range.getBoundingClientRect().right, ...[...heroCopy.querySelectorAll('.hero__lede, .btn')].map((e) => e.getBoundingClientRect().right));
+      rects.hero = { x0: right + 28, x1: W - 20, y0: navH + 12, y1: rel(heroFoot) - 12 };
+    }
+    const railTop = rail.getBoundingClientRect().top;
+    panels.forEach((p, i) => {
+      const r = p.getBoundingClientRect();
+      const top = r.top - (gsap.getProperty(p, 'y') || 0);
+      rects.stage[i + 1] = mobile
+        ? { x0: 10, x1: W - 10, y0: navH + 6, y1: Math.max(navH + 140, top - 18) }
+        : { x0: r.right + 36, x1: W - 16, y0: 60, y1: Math.min(H - 70, railTop - 16) };
+    });
+    // on phones, aim the hero laptop at the middle of its band
+    if (mobile && window.scrollY < 10) {
+      const mid = (rects.hero.y0 + rects.hero.y1) / 2;
+      S.shiftY = (H / 2 - mid) / H;
+    }
+  }
 
   ui.style.visibility = 'visible';
   gsap.set(panels, { autoAlpha: 0, y: 30 });
@@ -62,7 +100,7 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
   gradeRows.forEach((r) => r.classList.remove('is-active'));
 
   const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut', duration: 0.5 } });
-  const shot = (name, at, dur = 0.5, extra = {}) => tl.to(S.cam, { ...SHOTS[name], duration: dur }, at).to(S, { shiftX: stageShift, duration: dur, ...extra }, at);
+  const shot = (name, at, dur = 0.5, extra = {}) => tl.to(S.cam, { ...SHOTS[name], duration: dur }, at).to(S, { shiftX: stageShift, shiftY: stageShiftY, duration: dur, ...extra }, at);
 
   // ---- hero → 1 · Sourcing ----
   tl.fromTo(co('incoming'), { o: 1 }, { o: 0, duration: 0.12, immediateRender: false }, 0.1)
@@ -199,6 +237,16 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
     start: 'top top',
     onEnter: () => bench.setActive(false),
     onLeaveBack: () => bench.setActive(true),
+  });
+
+  // ---- auto-framing: tell the bench where the laptop may sit at each moment ----
+  measureRects();
+  ScrollTrigger.addEventListener('refresh', measureRects);
+  bench.setFrameRect(() => {
+    const t = tl.time();
+    if (t < 0.42) return rects.hero;
+    if (t > 7.3) return null; // the dive takes over the camera
+    return rects.stage[Math.min(7, Math.max(1, Math.round(t)))] || null;
   });
 
   return { timeline: tl, trigger };

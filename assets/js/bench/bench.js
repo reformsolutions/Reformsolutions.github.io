@@ -162,7 +162,7 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
   // Each frame we project the laptop's footprint with the tuned camera and, only
   // if it spills out, pull the camera back and shift the view until it fits.
   let rectFn = null;
-  const fr = { k: 1, sx: 0, sy: 0, tk: 1, tsx: 0, tsy: 0, ready: false };
+  const fr = { k: 1, sx: 0, sy: 0, tk: 1, tsx: 0, tsy: 0, ready: false, last: 0 };
   const P = laptop.parts;
   const footprint = [
     { obj: P.tray, pts: corners(-DIM.W / 2, DIM.W / 2, 0, DIM.baseTop, -DIM.D / 2, DIM.D / 2) },
@@ -205,13 +205,23 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     fr.tk = k;
     fr.tsx = dsx;
     fr.tsy = dsy;
-    const a = fr.ready ? 1 - Math.exp(-dt * 7) : 1;
+    // ease toward the target in real time (independent of frame rate), then snap once invisible
+    const now = performance.now();
+    const realDt = fr.last ? Math.min(0.25, (now - fr.last) / 1000) : 1 / 60;
+    fr.last = now;
+    const a = fr.ready ? 1 - Math.exp(-realDt * 7) : 1;
     fr.k += (k - fr.k) * a;
     fr.sx += (dsx - fr.sx) * a;
     fr.sy += (dsy - fr.sy) * a;
+    if (!frameSettling()) {
+      fr.k = k;
+      fr.sx = dsx;
+      fr.sy = dsy;
+    }
     fr.ready = true;
   }
-  const frameSettling = () => Math.abs(fr.tk - fr.k) > 1e-4 || Math.abs(fr.tsx - fr.sx) > 1e-4 || Math.abs(fr.tsy - fr.sy) > 1e-4;
+  // settled when the remaining correction is under half a pixel
+  const frameSettling = () => Math.abs(fr.tk - fr.k) > 0.0015 || Math.abs(fr.tsx - fr.sx) * W > 0.5 || Math.abs(fr.tsy - fr.sy) * H > 0.5;
 
   // ---- frame ----
   const vPos = new THREE.Vector3();
@@ -323,7 +333,15 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
       const preferLeft = c.dir === 'l';
       const fitsRight = x + c.bx + c.bw < W - 10;
       const fitsLeft = x - c.bx - c.bw > 10;
-      setSide(c, preferLeft ? !(fitsRight && !fitsLeft) : !fitsRight && fitsLeft);
+      if (!fitsLeft && !fitsRight) setSide(c, x > W / 2);
+      else setSide(c, preferLeft ? !(fitsRight && !fitsLeft) : !fitsRight && fitsLeft);
+      // if neither side has room (narrow phones), slide the box back on-screen
+      const boxLeft = c.left ? x - c.bx - c.bw : x + c.bx;
+      const shift = boxLeft < 8 ? 8 - boxLeft : boxLeft + c.bw > W - 8 ? W - 8 - (boxLeft + c.bw) : 0;
+      if (Math.abs(shift - (c.shift || 0)) > 0.5) {
+        c.shift = shift;
+        c.box.style.setProperty('--shift', `${shift.toFixed(1)}px`);
+      }
       c.el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
       c.el.style.opacity = o.toFixed(3);
       c.shown = true;
@@ -369,6 +387,7 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     }
     lastSig = sig;
     forceRender = false;
+    if (!renderedLast) fr.last = 0; // resuming from idle: don't count the idle gap
     frame(Math.min(0.1, accDt));
     accDt = 0;
     if (renderedLast && changed) adapt(deltaMS);
@@ -418,6 +437,8 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     render() {
       forceRender = true;
     },
+    // diagnostics for ?debug sessions
+    debug: () => ({ fr: { ...fr }, quality: { ...quality }, forceRender, settling: frameSettling(), sig: lastSig }),
     setActive(v) {
       if (v === active) return;
       active = v;

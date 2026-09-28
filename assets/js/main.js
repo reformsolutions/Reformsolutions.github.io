@@ -12,7 +12,7 @@ const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobileQuery = window.matchMedia('(max-width: 899px)');
 const isMobile = () => mobileQuery.matches;
 
-gsap.registerPlugin(ScrollTrigger, SplitText, DrawSVGPlugin, MotionPathPlugin, CustomEase);
+gsap.registerPlugin(ScrollTrigger, SplitText, DrawSVGPlugin);
 ScrollTrigger.config({ ignoreMobileResize: true });
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
@@ -27,9 +27,20 @@ const safe = (name, fn) => {
   }
 };
 
+// The full logo draw plays once per visit; later page loads get a quick fade.
+function firstVisit() {
+  try {
+    const seen = sessionStorage.getItem('rs-intro');
+    sessionStorage.setItem('rs-intro', '1');
+    return !seen;
+  } catch {
+    return true;
+  }
+}
+
 async function boot() {
   root.classList.add('js-ready');
-  const pre = createPreloader({ reduced });
+  const pre = createPreloader({ reduced, quick: !firstVisit() });
   pre.progress(0.12, 'Preparing the bench');
 
   // Smooth scrolling (skipped for reduced motion)
@@ -51,26 +62,26 @@ async function boot() {
   // 3D bench
   let bench = null;
   if (supportsWebGL() && !/[?&]nowebgl\b/.test(location.search)) {
-    bench = createBench({
+    bench = safe('bench', () => createBench({
       canvas: document.querySelector('.bench'),
       layer: document.querySelector('.callouts'),
       isMobile,
       reduced,
-    });
+    }));
   }
   if (!bench) root.classList.add('no-webgl');
   if (/[?&]debug\b/.test(location.search)) {
     window.__rs = { bench, lenis };
     window.__lenis = lenis;
   }
-  pre.progress(0.7, 'Running diagnostics');
-  await wait(30);
+  pre.progress(0.6, 'Running diagnostics');
 
   const nav = initNav({ lenis });
   initAnchors({ lenis, nav });
+  let warming = null;
   if (bench) {
     const ok = safe('story', () => initStory({ bench, lenis, isMobile, reduced, onDark: (d) => nav.setStoryDark(d) }));
-    if (ok) bench.warm();
+    if (ok) warming = bench.warm();
     else {
       bench.setActive(false);
       root.classList.add('no-webgl');
@@ -86,6 +97,8 @@ async function boot() {
   document.querySelectorAll('[data-year]').forEach((el) => (el.textContent = new Date().getFullYear()));
 
   ScrollTrigger.refresh();
+  // shaders compile in parallel where the GPU driver allows; never wait more than ~1.5s
+  if (warming) await Promise.race([warming.catch(() => {}), wait(1500)]);
   pre.progress(1);
   await pre.finish();
 

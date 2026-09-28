@@ -15,25 +15,37 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 
 ## Run it locally
 
-From the folder that contains `website/`:
+From this folder:
 
 ```bash
-node dev-server.mjs
+node serve.mjs
 ```
 
-Then open http://localhost:5173. Any static server works too (for example `npx serve website`).
-Opening `index.html` straight from disk will not work, because ES modules need a server.
+Then open http://localhost:5173. Opening `index.html` straight from disk will not work, because ES modules need a server.
+Test locally before pushing — GitHub Pages publishes whatever is on `main` within a minute or two.
 
-## Publish on GitHub Pages
+## Publishing
 
-1. Create a new repository on GitHub (for example `reform-solutions-site`).
-2. Put the **contents** of this `website/` folder at the root of the repository and push to `main`.
-3. In the repository, go to **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, then select `main` and `/ (root)`.
-4. The site appears at `https://<your-username>.github.io/<repo-name>/` after a minute or two.
+The site is live at https://reformsolutions.github.io/ (GitHub Pages, deployed from `main`, root folder).
+Push to `main` and the site updates automatically. `.nojekyll` makes GitHub serve every file untouched.
+For a custom domain, add a `CNAME` file containing the domain and point your DNS at GitHub Pages;
+then update the canonical/`og:` URLs at the top of `index.html`.
 
-All paths are relative, so the site works both at a sub-path and on a custom domain.
-`.nojekyll` is included so GitHub serves every file untouched.
-For a custom domain, add a `CNAME` file containing the domain (for example `www.reformsolutions.in`) and point your DNS at GitHub Pages.
+## How the 3D stays out of the way of the text
+
+The story (`assets/js/story.js`) measures a "safe rectangle" for each moment — the band above the hero copy
+on phones, the space right of the stage text on desktop — and the bench (`assets/js/bench/bench.js`)
+pulls the camera back or shifts the view whenever the laptop's on-screen footprint would spill out of it.
+If you change the copy length or layout, the framing adapts on its own.
+
+## Performance notes
+
+- `vendor/three.min.js` is a trimmed three.js build (see `vendor/README.md`).
+- The 3D canvas renders only when something changes; the idle hero float runs at 30fps.
+- Render resolution is capped by a pixel budget and lowered automatically on slow devices.
+- Shaders and textures are prepared during the preloader so the exploded view doesn't stutter.
+- The footer particles stop animating once the logo has formed.
+- The full logo preloader plays once per visit; later page loads get a short fade.
 
 ## Things to fill in before launch
 
@@ -53,7 +65,8 @@ assets/js/bench/           3D scene: laptop model, screen UI, procedural texture
 assets/js/sections/        equipment track + isometric art, business route, footer particles
 assets/js/ui.js            nav, menu, reveals, FAQ, form, sustainability loop
 assets/img/brand.svg       vector logo (traced from the original artwork) used across the site
-vendor/                    three.js r186, GSAP 3.15 (+ plugins), Lenis 1.3 (bundled locally)
+vendor/                    three.js r186 (trimmed), GSAP 3.15 (+ plugins), Lenis 1.3 — see vendor/README.md
+serve.mjs                  local preview server (not needed on GitHub Pages)
 ```
 
 ## Accessibility and fallbacks
