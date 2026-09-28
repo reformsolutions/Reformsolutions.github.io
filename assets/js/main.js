@@ -92,7 +92,7 @@ async function boot() {
   safe('particles', () => initParticles({ reduced }));
   safe('reveals', () => initReveals({ reduced }));
   safe('faq', initFaq);
-  safe('form', initForm);
+  safe('form', () => initForm({ lenis }));
   safe('loop', () => initLoop({ reduced }));
   document.querySelectorAll('[data-year]').forEach((el) => (el.textContent = new Date().getFullYear()));
 

@@ -10,7 +10,7 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | Hero → Process | A procedurally built 3D laptop (Three.js) is followed through the bench: sourcing, inspection (scan line), hardware testing (exploded view), data sanitization (SSD wipe), cleaning (brush pass), grading (stamp) and QC. The camera then dives into the laptop's screen. |
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. |
-| Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form opens the visitor's email app with the enquiry pre-filled (no server needed). |
+| Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; for now it hands off to the visitor's email app (see Enquiry form below). |
 | Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. |
 
 ## Run it locally
@@ -49,10 +49,28 @@ If you change the copy length or layout, the framing adapts on its own.
 
 ## Things to fill in before launch
 
-- **Contact details:** search `index.html` for `enquiries@example.com` and `+00 00000 00000` (both appear in the contact section and the footer). The enquiry form sends to whatever email is in the contact section's email link.
+- **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone number is still the placeholder `+00 00000 00000` in the contact section and footer.
+- **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
 - **Demo data:** the numbers on the laptop's screen and callouts (91% battery, 77/77 keys, and so on) are illustrative sample readings for the demo unit "Serial No. 2231", not company statistics. (Avoid an "RS-" prefix for IDs: in India it reads as a rupee price.)
 - **Social image:** `assets/img/og.png` is generated from the logo; replace it with a designed card if you like.
+
+## Enquiry form
+
+The contact form has three tabs (Buy refurbished, Sell or retire assets, Something else), each with its own fields.
+
+**Now (no form service):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the button opens
+the visitor's own email app with a new email to that address, filled in with everything they entered (sellers are
+asked to attach photos there). A confirmation panel offers **Try again** and **Copy your enquiry** for visitors whose
+email app doesn't open.
+
+**Adding a form service later:** replace that `action` in `index.html` with the service's endpoint URL (for example
+FormSubmit, Formspree, Web3Forms or your own server). The form then posts directly (multipart), and the photo upload
+on the Sell tab switches itself on: up to 5 photos, resized in the browser to 1600px JPEGs and sent as `Photo 1` …
+`Photo 5`. If the service uses extra hidden fields (such as `_subject`, `_next` or `_captcha`), add them inside the
+form as its docs describe; a `_subject` field is filled in automatically.
+
+Fields live in the `<form class="enquiry">` block of `index.html`; each field's `name` is the label used in the email.
 
 ## Where things live
 

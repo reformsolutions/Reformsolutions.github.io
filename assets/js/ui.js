@@ -166,38 +166,353 @@ export function initFaq() {
   });
 }
 
-export function initForm() {
+// ---- Enquiry form -----------------------------------------------------------
+// Tabs switch the fields for each enquiry type. On submit the form is checked and
+// multi-choice answers are joined into single fields, then:
+//  · no form service yet (the action is a mailto: link): the visitor's email app opens
+//    with everything filled in, and a panel offers "Try again" / "Copy your enquiry";
+//  · a form service URL in the action: the form posts there directly, and the photo
+//    upload on the Sell tab switches on (photos are resized in the browser first).
+const ENQUIRY_TYPES = {
+  buy: { button: 'Request a quote', message: 'Which models or specs do you need? Any delivery timeline?' },
+  sell: { button: 'Get a valuation', message: 'Models, age and specs if you know them — anything that helps us value it.' },
+  other: { button: 'Send message', message: 'How can we help?' },
+};
+const EMAIL_LABELS = { email: 'Email', 'Approx quantity': 'Approx. quantity' };
+const MAX_PHOTOS = 5;
+const MAX_PHOTO_MB = 5;
+
+// Resize a photo to at most 1600px on its longest side (as JPEG) so uploads stay small.
+async function shrinkPhoto(file) {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch {
+      bitmap = await createImageBitmap(file);
+    }
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size < 900 * 1024) {
+      bitmap.close?.();
+      return file;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.append(area);
+    area.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    area.remove();
+    return ok;
+  }
+}
+
+export function initForm({ lenis } = {}) {
   const form = document.querySelector('.enquiry');
   if (!form) return;
+  const action = (form.getAttribute('action') || '').trim();
+  const viaEmail = !/^https?:\/\//i.test(action);
+  const inbox = action.startsWith('mailto:')
+    ? action.slice('mailto:'.length)
+    : (document.querySelector('[data-contact="email"]')?.getAttribute('href') || '').replace('mailto:', '');
   const note = form.querySelector('.enquiry__note');
-  const emailLink = document.querySelector('[data-contact="email"]');
-  const to = emailLink ? emailLink.getAttribute('href').replace('mailto:', '') : '';
+  if (!viaEmail) note.innerHTML = '<b class="req" aria-hidden="true">*</b> Required · We’ll get back to you by email or phone.';
+  const noteDefault = note.innerHTML;
+  const submit = form.querySelector('.enquiry__submit');
+  const submitLabel = submit.querySelector('span');
+  const field = (name) => form.elements.namedItem(name);
+  const message = field('Message');
+  const groups = [...form.querySelectorAll('.enquiry__group')];
+  const typeRadios = [...form.querySelectorAll('input[name="Enquiry type"]')];
+  const done = form.querySelector('.enquiry__done');
+  let type = 'buy';
+  let refreshTimer = 0;
+  const refreshSoon = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 150); // the form's height changed
+  };
+
+  const setNote = (text = '', isError = false) => {
+    note.classList.toggle('is-error', isError);
+    if (text) note.textContent = text;
+    else note.innerHTML = noteDefault;
+  };
+
+  function clearErrors() {
+    form.querySelectorAll('.field.is-invalid').forEach((f) => f.classList.remove('is-invalid'));
+    form.querySelectorAll('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+    setNote();
+  }
+
+  // ---- tabs ----
+  function setType(next) {
+    type = ENQUIRY_TYPES[next] ? next : 'buy';
+    groups.forEach((g) => {
+      const on = g.dataset.group === type;
+      g.disabled = !on;
+      g.hidden = !on;
+    });
+    submitLabel.textContent = ENQUIRY_TYPES[type].button;
+    message.placeholder = ENQUIRY_TYPES[type].message;
+    clearErrors();
+    refreshSoon();
+  }
+  typeRadios.forEach((r) => r.addEventListener('change', () => r.checked && setType(r.dataset.type)));
+  setType(typeRadios.find((r) => r.checked)?.dataset.type);
+
+  // ---- validation ----
+  const isActive = (el) => !el.closest('fieldset[disabled]');
+  const control = (el) => (el.matches('input, select, textarea') ? el : el.querySelector('input'));
+  const labelOf = (el) =>
+    el.closest('.field')?.querySelector('.field__label')?.textContent.replace('*', '').replace(/\(.*\)/, '').trim() || el.name;
+
+  function validate() {
+    clearErrors();
+    const bad = [];
+    form.querySelectorAll('[required]').forEach((el) => {
+      if (!isActive(el)) return;
+      const value = el.value.trim();
+      let ok = value !== '';
+      if (ok && el.type === 'email') ok = el.checkValidity();
+      if (ok && el.type === 'tel') {
+        const digits = value.replace(/\D/g, '');
+        ok = digits.length >= 10 && digits.length <= 13;
+      }
+      if (!ok) bad.push(el);
+    });
+    form.querySelectorAll('[data-required-group]').forEach((group) => {
+      if (isActive(group) && !group.querySelector('input:checked')) bad.push(group);
+    });
+    bad.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)); // page order
+    bad.forEach((el) => {
+      el.closest('.field')?.classList.add('is-invalid');
+      control(el)?.setAttribute('aria-invalid', 'true');
+    });
+    if (bad.length) {
+      setNote(`Please check: ${bad.map(labelOf).join(', ')}.`, true);
+      control(bad[0])?.focus();
+    }
+    return bad.length === 0;
+  }
+
+  // fixing a field clears its mark, and the note then lists only what's still missing
+  form.addEventListener('input', (e) => {
+    const f = e.target.closest('.field');
+    if (!f?.classList.contains('is-invalid')) return;
+    f.classList.remove('is-invalid');
+    f.querySelectorAll('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+    const left = [...form.querySelectorAll('.field.is-invalid')].map(labelOf);
+    setNote(left.length ? `Please check: ${left.join(', ')}.` : '', left.length > 0);
+  });
+
+  // ---- photos: uploaded only with a form service; by email they're attached to the email ----
+  const upload = form.querySelector('.upload');
+  const uploadHint = form.querySelector('.upload-hint');
+  const picker = form.querySelector('.upload__picker');
+  const drop = form.querySelector('.upload__drop');
+  const list = form.querySelector('.upload__list');
+  const slots = [...form.querySelectorAll('.upload__slot')];
+  const photos = [];
+  const canAssignFiles = (() => {
+    try {
+      const dt = new DataTransfer();
+      dt.items.add(new File([''], 'x.txt'));
+      return dt.files.length === 1;
+    } catch {
+      return false;
+    }
+  })();
+  if (upload) upload.hidden = viaEmail;
+  if (uploadHint) uploadHint.hidden = !viaEmail;
+  if (viaEmail) slots.forEach((s) => (s.disabled = true));
+  else if (picker && !canAssignFiles) {
+    picker.name = 'Photos'; // older browsers: send the picked files as they are
+    slots.forEach((s) => s.remove());
+  }
+
+  function renderPhotos() {
+    list.replaceChildren(
+      ...photos.map((p, i) => {
+        const li = document.createElement('li');
+        const img = document.createElement('img');
+        img.src = p.url;
+        img.alt = `Photo ${i + 1}`;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'upload__remove';
+        remove.setAttribute('aria-label', `Remove photo ${i + 1}`);
+        remove.textContent = '×';
+        remove.addEventListener('click', () => {
+          URL.revokeObjectURL(p.url);
+          photos.splice(photos.indexOf(p), 1);
+          renderPhotos();
+        });
+        li.append(img, remove);
+        return li;
+      })
+    );
+  }
+
+  async function addPhotos(files) {
+    let skipped = 0;
+    for (const file of files) {
+      if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
+        skipped++;
+        continue;
+      }
+      if (photos.length >= MAX_PHOTOS) {
+        skipped++;
+        continue;
+      }
+      const small = await shrinkPhoto(file);
+      if (small.size > MAX_PHOTO_MB * 1024 * 1024) {
+        skipped++;
+        continue;
+      }
+      photos.push({ file: small, url: URL.createObjectURL(small) });
+    }
+    renderPhotos();
+    setNote(skipped ? `Up to ${MAX_PHOTOS} photos, ${MAX_PHOTO_MB} MB each — ${skipped} not added.` : '', skipped > 0);
+  }
+
+  if (!viaEmail && picker && canAssignFiles) {
+    picker.addEventListener('change', () => {
+      const files = [...picker.files];
+      picker.value = '';
+      addPhotos(files);
+    });
+    ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.add('is-drag')));
+    ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove('is-drag')));
+  }
+
+  function fillPhotoSlots() {
+    slots.forEach((slot, i) => {
+      const photo = photos[i];
+      slot.disabled = !photo;
+      if (!photo) return;
+      const dt = new DataTransfer();
+      dt.items.add(photo.file);
+      slot.files = dt.files;
+    });
+  }
+
+  // ---- sending ----
+  const value = (name) => (field(name)?.value || '').trim();
+  const subjectLine = () =>
+    `Website enquiry: ${typeRadios.find((r) => r.checked)?.value || 'Enquiry'} — ${value('Company') || value('Name')}`;
+
+  function joinChoices() {
+    form.querySelectorAll('.checks[data-target]').forEach((group) => {
+      const out = field(group.dataset.target);
+      if (out) out.value = [...group.querySelectorAll('input:checked')].map((i) => i.value).join(', ');
+    });
+  }
+
+  function enquiryText() {
+    const lines = [];
+    let text = '';
+    for (const [name, raw] of new FormData(form)) {
+      const v = typeof raw === 'string' ? raw.trim() : '';
+      if (!v || name.startsWith('_')) continue;
+      if (name === 'Message') text = v;
+      else lines.push(`${EMAIL_LABELS[name] || name}: ${v}`);
+    }
+    lines.push('', 'Message:', text);
+    if (type === 'sell') lines.push('', 'Photos: please attach them to this email before sending.');
+    return lines.join('\n');
+  }
+
+  function showDone() {
+    done.querySelector('.enquiry__done-photos').hidden = type !== 'sell';
+    form.classList.add('is-sent');
+    done.hidden = false;
+    refreshSoon();
+    const y = form.getBoundingClientRect().top + window.scrollY - 120;
+    if (lenis) lenis.scrollTo(y, { duration: 0.9 });
+    else window.scrollTo({ top: y, behavior: 'smooth' });
+    done.focus({ preventScroll: true });
+  }
+
+  let lastEnquiry = '';
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const data = new FormData(form);
-    const name = (data.get('name') || '').toString().trim();
-    const email = (data.get('email') || '').toString().trim();
-    if (!name || !email || !form.querySelector('[name="email"]').checkValidity()) {
-      note.textContent = 'Please add your name and a valid email address.';
-      note.classList.add('is-error');
-      form.querySelector(!name ? '[name="name"]' : '[name="email"]').focus();
+    if (!validate()) return;
+    joinChoices();
+    const subject = subjectLine();
+    if (viaEmail) {
+      const body = enquiryText();
+      const href = `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.replace(/\n/g, '\r\n'))}`;
+      lastEnquiry = `Subject: ${subject}\n\n${body}`;
+      done.querySelector('.enquiry__retry').href = href;
+      window.location.href = href;
+      showDone();
       return;
     }
-    note.classList.remove('is-error');
-    const intent = data.get('intent');
-    const lines = [
-      `Enquiry: ${intent}`,
-      `Name: ${name}`,
-      data.get('company') ? `Company: ${data.get('company')}` : null,
-      `Email: ${email}`,
-      data.get('phone') ? `Phone: ${data.get('phone')}` : null,
-      `Quantity: ${data.get('quantity')}`,
-      '',
-      (data.get('message') || '').toString(),
-    ].filter((l) => l !== null);
-    const subject = `${intent} — ${data.get('company') || name}`;
-    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
-    note.textContent = 'Your email app should open with everything filled in.';
+    if (field('_subject')) field('_subject').value = subject;
+    if (canAssignFiles) fillPhotoSlots();
+    form.method = 'post';
+    form.enctype = 'multipart/form-data';
+    submit.setAttribute('aria-busy', 'true');
+    submitLabel.textContent = 'Sending…';
+    form.submit();
+  });
+
+  // ---- confirmation panel (email hand-off) ----
+  const copyButton = done.querySelector('.enquiry__copy');
+  const copied = done.querySelector('.enquiry__copied');
+  const copyArea = done.querySelector('.enquiry__copy-text');
+  copyButton.addEventListener('click', async () => {
+    if (await copyText(lastEnquiry)) {
+      copied.textContent = 'Copied.';
+      setTimeout(() => (copied.textContent = ''), 4000);
+    } else {
+      copyArea.value = lastEnquiry;
+      copyArea.hidden = false;
+      copyArea.select();
+      copied.textContent = 'Select the text below and copy it.';
+    }
+  });
+  done.querySelector('.enquiry__back').addEventListener('click', () => {
+    form.classList.remove('is-sent');
+    done.hidden = true;
+    copyArea.hidden = true;
+    copied.textContent = '';
+    refreshSoon();
+    typeRadios.find((r) => r.checked)?.focus({ preventScroll: true });
+  });
+
+  // coming back via the browser's Back button after posting to a form service
+  window.addEventListener('pageshow', () => {
+    submit.removeAttribute('aria-busy');
+    submitLabel.textContent = ENQUIRY_TYPES[type].button;
   });
 }
 
