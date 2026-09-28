@@ -12,7 +12,6 @@ export const C = {
 
 const MONO = '"Plex Mono", ui-monospace, monospace';
 const SANS = '"Archivo", system-ui, sans-serif';
-const SERIF = '"Bodoni Moda", Didot, Georgia, serif';
 
 export function makeCanvas(w, h) {
   const c = document.createElement('canvas');

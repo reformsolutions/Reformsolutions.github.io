@@ -4,20 +4,6 @@
    ========================================================================== */
 
 @font-face {
-  font-family: "Bodoni Moda";
-  src: url("../fonts/bodoni-moda.woff2") format("woff2");
-  font-weight: 400 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Bodoni Moda";
-  src: url("../fonts/bodoni-moda-italic.woff2") format("woff2");
-  font-weight: 400 900;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
   font-family: "Archivo";
   src: url("../fonts/archivo.woff2") format("woff2");
   font-weight: 100 900;
@@ -54,7 +40,8 @@
   --line-strong: rgba(45, 68, 90, 0.32);
   --night-line: rgba(253, 248, 236, 0.14);
 
-  --serif: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
+  /* headings: Archivo semi-expanded (sturdy and wide, like the SOLUTIONS in the logo) */
+  --display: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --sans: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
@@ -165,16 +152,27 @@ em { font-style: italic; }
 .eyebrow--light { color: rgba(253, 248, 236, 0.66); }
 
 .section-title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2.35rem, 5.1vw, 5.3rem);
-  line-height: 0.98;
-  letter-spacing: -0.02em;
-  font-optical-sizing: auto;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 4.3vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
   text-wrap: balance;
 }
-.section-title em, .hero__title em, .stage__title em, .handoff__title em,
-.eq-intro__title em, .impact__title em { font-weight: 450; }
+
+/* Every display heading uses semi-expanded Archivo.
+   Accents (<em>) switch to a light weight rather than italic, so they stay easy to read. */
+.hero__title, .section-title, .stage__title, .handoff__title, .eq-intro__title, .eq-card__title,
+.eq-end__text, .client__name, .principle h3, .impact__title, .route__step h3, .footer__sign,
+.menu a, .grades dt, .equipment__word, .lost h1 {
+  font-stretch: 112%;
+}
+.hero__title em, .section-title em, .stage__title em, .handoff__title em, .eq-intro__title em,
+.impact__title em, .footer__sign em, .lost h1 em {
+  font-style: normal;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+}
 
 /* Line-mask reveal helpers (SplitText) */
 .split-line { overflow: clip; padding-bottom: 0.08em; margin-bottom: -0.08em; }
@@ -333,9 +331,11 @@ em { font-style: italic; }
   gap: 16px;
   padding: 16px 0;
   border-bottom: 1px solid var(--line);
-  font-family: var(--serif);
-  font-size: clamp(2rem, 9vw, 3rem);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 7.4vw, 2.5rem);
   line-height: 1.05;
+  letter-spacing: -0.03em;
 }
 .menu a .mono { color: var(--orange); font-size: 0.7rem; }
 
@@ -439,11 +439,11 @@ em { font-style: italic; }
 .hero__grid { display: grid; align-items: center; padding-block: clamp(16px, 3vh, 40px); }
 .hero__copy { max-width: 760px; }
 .hero__title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(3.4rem, 9.4vw, 10.5rem);
-  line-height: 0.88;
-  letter-spacing: -0.028em;
+  font-family: var(--display);
+  font-weight: 650;
+  font-size: clamp(3.2rem, 7.6vw, 8.6rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
   margin-bottom: clamp(20px, 3vh, 34px);
 }
 .hero__title em { display: inline-block; color: var(--ink); }
@@ -514,11 +514,11 @@ em { font-style: italic; }
 .stage__num b { color: var(--orange); font-weight: 500; font-size: 0.8rem; }
 .stage__num span { margin-right: 10px; }
 .stage__title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2rem, 3.5vw, 3.55rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 2.8vw, 2.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
   margin-bottom: 20px;
   text-wrap: balance;
 }
@@ -536,7 +536,7 @@ em { font-style: italic; }
   color: var(--ink-mute);
   transition: color 0.4s;
 }
-.grades dt { font-family: var(--serif); font-size: 2rem; line-height: 1; }
+.grades dt { font-family: var(--display); font-weight: 600; font-size: 1.7rem; line-height: 1; }
 .grades dd { font-size: 0.95rem; }
 .grades__row.is-active { color: var(--ink); }
 .grades__row.is-active dt { color: var(--orange); }
@@ -583,12 +583,12 @@ em { font-style: italic; }
   padding: 120px 0;
 }
 .handoff__title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2.6rem, 6.4vw, 6.9rem);
-  line-height: 0.98;
-  letter-spacing: -0.022em;
-  max-width: 15ch;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2.3rem, 5.2vw, 5.6rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  max-width: 16ch;
   text-wrap: balance;
 }
 .handoff__title em { color: var(--orange-2); }
@@ -607,11 +607,11 @@ em { font-style: italic; }
   top: 46%;
   left: 0;
   transform: translateY(-50%);
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(9rem, 27vw, 30rem);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(8rem, 22vw, 24rem);
   line-height: 1;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.05em;
   white-space: nowrap;
   color: transparent;
   -webkit-text-stroke: 1px rgba(253, 248, 236, 0.1);
@@ -634,11 +634,11 @@ em { font-style: italic; }
   padding-right: 3vw;
 }
 .eq-intro__title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2.4rem, 4.4vw, 4.6rem);
-  line-height: 0.98;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 3.6vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
   margin-bottom: 24px;
 }
 .eq-intro__title em { color: var(--orange-2); }
@@ -658,11 +658,11 @@ em { font-style: italic; }
 .eq-card__art svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .eq-card__num { color: var(--orange-2); font-size: 0.7rem; margin-bottom: 10px; }
 .eq-card__title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2rem, 2.6vw, 2.8rem);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 2.2vw, 2.35rem);
   line-height: 1;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.035em;
   margin-bottom: 12px;
 }
 .eq-card__body > p:not(.eq-card__num) { color: rgba(253, 248, 236, 0.72); font-size: 0.98rem; margin-bottom: 16px; max-width: 36ch; }
@@ -677,7 +677,7 @@ em { font-style: italic; }
   gap: 22px;
   padding-left: 3vw;
 }
-.eq-end__text { font-family: var(--serif); font-size: clamp(1.8rem, 2.6vw, 2.6rem); line-height: 1.05; }
+.eq-end__text { font-family: var(--display); font-weight: 600; font-size: clamp(1.6rem, 2.2vw, 2.2rem); line-height: 1.08; letter-spacing: -0.035em; }
 
 /* Isometric line art */
 .iso { fill: none; stroke: rgba(253, 248, 236, 0.86); stroke-linejoin: round; stroke-linecap: round; }
@@ -753,7 +753,7 @@ em { font-style: italic; }
 }
 .route__step.is-on { opacity: 1; }
 .route__step .mono { display: block; color: var(--orange); font-size: 0.66rem; margin-bottom: 8px; }
-.route__step h3 { font-family: var(--serif); font-weight: 500; font-size: clamp(1.5rem, 2vw, 2.1rem); line-height: 1.02; margin-bottom: 8px; }
+.route__step h3 { font-family: var(--display); font-weight: 600; font-size: clamp(1.3rem, 1.6vw, 1.7rem); line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 8px; }
 .route__step p { color: var(--ink-soft); font-size: 0.93rem; line-height: 1.5; }
 
 /* ---------- Clients ---------- */
@@ -771,11 +771,11 @@ em { font-style: italic; }
   overflow: hidden;
 }
 .client__name {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2.1rem, 5.4vw, 5rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4.4vw, 4.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
   transition: transform 0.7s var(--ease-out), color 0.4s;
 }
 .client__note { color: var(--ink-soft); max-width: 40ch; transition: opacity 0.5s, transform 0.7s var(--ease-out); }
@@ -815,7 +815,7 @@ em { font-style: italic; }
   transform: scaleX(var(--draw, 1));
 }
 .principle__num { display: block; color: var(--orange); margin-bottom: 44px; font-size: 0.7rem; }
-.principle h3 { font-family: var(--serif); font-weight: 500; font-size: clamp(1.6rem, 2.1vw, 2.2rem); line-height: 1.02; margin-bottom: 14px; letter-spacing: -0.01em; }
+.principle h3 { font-family: var(--display); font-weight: 600; font-size: clamp(1.35rem, 1.7vw, 1.8rem); line-height: 1.08; margin-bottom: 14px; letter-spacing: -0.03em; }
 .principle p { color: var(--ink-soft); font-size: 0.97rem; max-width: 34ch; }
 
 /* ---------- Impact (dark) ---------- */
@@ -829,11 +829,11 @@ em { font-style: italic; }
 }
 .impact__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5vw; align-items: center; }
 .impact__title {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2.8rem, 6.4vw, 6.6rem);
-  line-height: 0.96;
-  letter-spacing: -0.024em;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2.4rem, 5.2vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   margin-bottom: 28px;
 }
 .impact__title em { color: var(--orange-2); }
@@ -966,11 +966,11 @@ em { font-style: italic; }
   padding-bottom: clamp(36px, 4vw, 60px);
 }
 .footer__sign {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: clamp(2.5rem, 4.6vw, 4.8rem);
-  line-height: 0.98;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 3.8vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
   margin-bottom: 22px;
 }
 .footer__sign em { color: var(--orange-2); }
@@ -1022,7 +1022,7 @@ em { font-style: italic; }
   /* The laptop is framed into whatever space is left above this copy, so keep it compact */
   .hero__grid { align-items: end; padding-top: 0; padding-bottom: 18px; }
   .hero .eyebrow { font-size: 0.6rem; letter-spacing: 0.07em; margin-bottom: 14px; }
-  .hero__title { font-size: clamp(2.8rem, 14vw, 4.8rem); margin-bottom: 16px; }
+  .hero__title { font-size: clamp(2.6rem, 12.6vw, 4.4rem); margin-bottom: 16px; }
   .hero__lede { font-size: 0.95rem; margin-bottom: 22px; }
   .hero__actions { align-items: center; gap: 14px 22px; }
   .hero__actions .btn { height: 46px; padding: 0 18px 0 20px; font-size: 0.72rem; }
@@ -1054,11 +1054,11 @@ em { font-style: italic; }
     right: var(--gutter);
     translate: none;
   }
-  .stage__title { font-size: clamp(1.7rem, 7.4vw, 2.3rem); margin-bottom: 12px; }
+  .stage__title { font-size: clamp(1.45rem, 6.2vw, 2rem); margin-bottom: 12px; }
   .stage__text { font-size: 0.92rem; margin-bottom: 14px; }
   .stage__list { display: none; }
   .grades__row { padding: 6px 0; grid-template-columns: 40px 1fr; }
-  .grades dt { font-size: 1.5rem; }
+  .grades dt { font-size: 1.35rem; }
   .grades dd { font-size: 0.86rem; }
   .rail { bottom: 14px; }
   .rail button { font-size: 0; gap: 0; justify-content: center; padding: 10px 0; }

@@ -81,4 +81,4 @@ serve.mjs                  local preview server (not needed on GitHub Pages)
 - Three.js — MIT
 - GSAP — free "Standard" licence (includes ScrollTrigger, SplitText, DrawSVG, MotionPath)
 - Lenis — MIT
-- Fonts: Bodoni Moda, Archivo, IBM Plex Mono — SIL Open Font License, self-hosted
+- Fonts: Archivo (headings and body), IBM Plex Mono (labels) — SIL Open Font License, self-hosted

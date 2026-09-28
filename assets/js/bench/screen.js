@@ -7,7 +7,6 @@ const W = 1280;
 const H = 800;
 const MONO = '"Plex Mono", ui-monospace, monospace';
 const SANS = '"Archivo", system-ui, sans-serif';
-const SERIF = '"Bodoni Moda", Didot, Georgia, serif';
 
 const BG = '#0e151c';
 const FG = '#e9e2d0';
@@ -275,8 +274,13 @@ export class ScreenUI {
     ctx.restore();
     ctx.textAlign = 'center';
     ctx.fillStyle = C.paper;
-    ctx.font = `italic 500 76px ${SERIF}`;
+    // same display style as the site's headings: Archivo semibold, semi-expanded
+    ctx.font = `600 70px ${SANS}`;
+    if ('fontStretch' in ctx) ctx.fontStretch = 'semi-expanded';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '-2px';
     ctx.fillText('Ready for work.', W / 2, 500);
+    if ('fontStretch' in ctx) ctx.fontStretch = 'normal';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
     ctx.font = `500 20px ${MONO}`;
     ctx.fillStyle = 'rgba(253, 248, 236, 0.6)';
     const qc = seg(p, 0.35, 0.8);

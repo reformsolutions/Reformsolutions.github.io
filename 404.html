@@ -5,32 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Page not found — Reform Solutions</title>
   <meta name="robots" content="noindex">
-  <script>
-    // GitHub Pages serves this file at the missing URL, so pin relative paths to the site root.
-    (function () {
-      var seg = location.pathname.split('/');
-      var root = /github\.io$/.test(location.hostname) && seg.length > 2 ? '/' + seg[1] + '/' : '/';
-      document.write('<base href="' + root + '">');
-    })();
-  </script>
-  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/main.css">
+  <!-- GitHub Pages serves this file at whatever URL was missing, so paths here are
+       absolute (the site lives at the domain root: https://reformsolutions.github.io/). -->
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/main.css">
   <style>
     .lost { min-height: 100vh; min-height: 100svh; display: grid; align-content: center; gap: 28px; }
     .lost__code { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.12em; color: var(--ink-soft); }
     .lost__code b { color: var(--orange); font-weight: 500; }
-    .lost h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(2.8rem, 7vw, 6.4rem); line-height: 0.95; letter-spacing: -0.02em; max-width: 14ch; }
+    .lost h1 { font-family: var(--display); font-weight: 600; font-size: clamp(2.4rem, 5.6vw, 5.2rem); line-height: 1; letter-spacing: -0.04em; max-width: 15ch; }
     .lost p { color: var(--ink-soft); max-width: 42ch; }
     .lost__mark { width: 96px; height: auto; color: var(--ink); }
   </style>
 </head>
 <body>
   <main class="lost wrap">
-    <svg class="lost__mark" viewBox="0 0 1586 975" role="img" aria-label="Reform Solutions"><use href="assets/img/brand.svg#rs-mark"/></svg>
+    <svg class="lost__mark" viewBox="0 0 1586 975" role="img" aria-label="Reform Solutions"><use href="/assets/img/brand.svg#rs-mark"/></svg>
     <p class="lost__code"><b>404</b> · UNIT NOT FOUND</p>
     <h1>This page has been <em>retired responsibly.</em></h1>
     <p>Whatever used to live here has moved on. The rest of the site is still very much in service.</p>
-    <div><a class="btn" href="./"><span>Back to the bench</span><svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 12h15M13 6l6 6-6 6"/></svg></a></div>
+    <div><a class="btn" href="/"><span>Back to the bench</span><svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 12h15M13 6l6 6-6 6"/></svg></a></div>
   </main>
 </body>
 </html>
