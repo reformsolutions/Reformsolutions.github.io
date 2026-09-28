@@ -548,7 +548,8 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   const screenCenter = new THREE.Object3D();
   screenCenter.position.set(0, DIM.displayY, 0.0022);
   lid.add(screenCenter);
-  anchor('display', lid, -1.25, DIM.displayY + 0.6, 0.01);
+  // on the top bezel strip, so the dot never covers text on the screen
+  anchor('display', lid, -1.2, (DIM.displayY + DIM.displayH / 2 + D) / 2, 0.01);
 
   // outer face: grime, previous owner's sticker, Reform asset tag
   const outerZ = -DIM.lidT - 0.0009;

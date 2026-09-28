@@ -371,11 +371,11 @@ export function drawAssetTag(ctx, w, h, { grade = null, stamp = 0 } = {}) {
   ctx.fillText('REFORM SOLUTIONS', 46, 44);
   ctx.font = `500 16px ${MONO}`;
   ctx.fillStyle = '#6a7a8a';
-  ctx.fillText('ASSET', 46, 84);
+  ctx.fillText('SERIAL NO.', 46, 84);
   ctx.fillStyle = C.ink;
   ctx.font = `500 40px ${MONO}`;
-  ctx.fillText('RS-2231', 46, 126);
-  drawBarcode(ctx, 'RS-2231', 46, 146, 290, 72, C.ink);
+  ctx.fillText('2231', 46, 126);
+  drawBarcode(ctx, 'SN-2231', 46, 146, 290, 72, C.ink);
   // grade box
   const bx = w - 150, by = 30, bw = 118, bh = h - 60;
   ctx.strokeStyle = C.ink;

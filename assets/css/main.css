@@ -435,13 +435,14 @@ em { font-style: italic; }
   grid-template-rows: 1fr auto;
   padding-top: var(--nav-h);
 }
-.hero__grid { display: grid; align-items: end; padding-bottom: clamp(28px, 6vh, 72px); }
+/* copy sits centred between the nav and the foot line, so no dead band above it */
+.hero__grid { display: grid; align-items: center; padding-block: clamp(16px, 3vh, 40px); }
 .hero__copy { max-width: 760px; }
 .hero__title {
   font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(3.4rem, 8.6vw, 8.4rem);
-  line-height: 0.9;
+  font-size: clamp(3.4rem, 9.4vw, 10.5rem);
+  line-height: 0.88;
   letter-spacing: -0.028em;
   margin-bottom: clamp(20px, 3vh, 34px);
 }
@@ -1019,9 +1020,9 @@ em { font-style: italic; }
   body { font-size: 1rem; }
   .nav__word { height: 32px; }
   /* The laptop is framed into whatever space is left above this copy, so keep it compact */
-  .hero__grid { align-items: end; padding-bottom: 18px; }
+  .hero__grid { align-items: end; padding-top: 0; padding-bottom: 18px; }
   .hero .eyebrow { font-size: 0.6rem; letter-spacing: 0.07em; margin-bottom: 14px; }
-  .hero__title { font-size: clamp(2.6rem, 12.4vw, 4.4rem); margin-bottom: 16px; }
+  .hero__title { font-size: clamp(2.8rem, 14vw, 4.8rem); margin-bottom: 16px; }
   .hero__lede { font-size: 0.95rem; margin-bottom: 22px; }
   .hero__actions { align-items: center; gap: 14px 22px; }
   .hero__actions .btn { height: 46px; padding: 0 18px 0 20px; font-size: 0.72rem; }

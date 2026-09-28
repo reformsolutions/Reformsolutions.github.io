@@ -116,11 +116,11 @@ export class ScreenUI {
 
   drawPost(ctx, p) {
     const boot = seg(p, 0, 0.12);
-    this.frame(ctx, 'REFORM BENCH — INTAKE INSPECTION', 'RS-2231');
+    this.frame(ctx, 'REFORM BENCH — INTAKE INSPECTION', 'SERIAL NO. 2231');
     ctx.globalAlpha = boot;
     ctx.font = `500 24px ${MONO}`;
     const rows = [
-      ['Unit', 'RS-2231'],
+      ['Serial No.', '2231'],
       ['Received', DATE],
       ['Source', 'Corporate refresh'],
     ];
@@ -169,7 +169,7 @@ export class ScreenUI {
   }
 
   drawDiag(ctx, p) {
-    this.frame(ctx, 'HARDWARE DIAGNOSTICS', 'RS-2231');
+    this.frame(ctx, 'HARDWARE DIAGNOSTICS', 'SERIAL NO. 2231');
     const n = TESTS.length;
     let passed = 0;
     ctx.font = `500 23px ${MONO}`;
@@ -203,7 +203,7 @@ export class ScreenUI {
     ctx.fillText(`${passed} OF ${n} PASSED`, 64, H - 60);
     ctx.textAlign = 'right';
     ctx.fillStyle = DIM;
-    ctx.fillText('LOGGED TO RS-2231', W - 64, H - 60);
+    ctx.fillText('LOGGED TO SERIAL NO. 2231', W - 64, H - 60);
     ctx.textAlign = 'left';
   }
 
@@ -244,7 +244,7 @@ export class ScreenUI {
     ctx.fillStyle = FG;
     if (done) {
       ctx.fillStyle = PASS;
-      ctx.fillText('✓  0 RECOVERABLE SECTORS — WIPE LOGGED TO RS-2231', 64, H - 80);
+      ctx.fillText('✓  0 RECOVERABLE SECTORS — WIPE LOGGED TO SERIAL NO. 2231', 64, H - 80);
     } else {
       ctx.fillStyle = DIM;
       ctx.fillText(`SECTORS ${Math.round(write * 1000215216).toLocaleString('en-US')} / 1,000,215,216`, 64, H - 80);
@@ -280,7 +280,7 @@ export class ScreenUI {
     ctx.font = `500 20px ${MONO}`;
     ctx.fillStyle = 'rgba(253, 248, 236, 0.6)';
     const qc = seg(p, 0.35, 0.8);
-    const line = 'QC PASSED · GRADE A · RS-2231';
+    const line = 'QC PASSED · GRADE A · SERIAL NO. 2231';
     ctx.fillText(line.slice(0, Math.round(line.length * qc)), W / 2, 570);
     ctx.textAlign = 'left';
     ctx.globalAlpha = 1;

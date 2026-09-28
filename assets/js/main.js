@@ -57,7 +57,7 @@ async function boot() {
 
   // Fonts affect line breaks and canvas labels, so wait (briefly) for them.
   await Promise.race([document.fonts.ready, wait(2500)]);
-  pre.progress(0.35, 'Unpacking unit RS-2231');
+  pre.progress(0.35, 'Unpacking the next unit');
 
   // 3D bench
   let bench = null;

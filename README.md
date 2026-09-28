@@ -51,7 +51,7 @@ If you change the copy length or layout, the framing adapts on its own.
 
 - **Contact details:** search `index.html` for `enquiries@example.com` and `+00 00000 00000` (both appear in the contact section and the footer). The enquiry form sends to whatever email is in the contact section's email link.
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
-- **Demo data:** the numbers on the laptop's screen and callouts (91% battery, 77/77 keys, and so on) are illustrative sample readings for the demo unit "RS-2231", not company statistics.
+- **Demo data:** the numbers on the laptop's screen and callouts (91% battery, 77/77 keys, and so on) are illustrative sample readings for the demo unit "Serial No. 2231", not company statistics. (Avoid an "RS-" prefix for IDs: in India it reads as a rupee price.)
 - **Social image:** `assets/img/og.png` is generated from the logo; replace it with a designed card if you like.
 
 ## Where things live
