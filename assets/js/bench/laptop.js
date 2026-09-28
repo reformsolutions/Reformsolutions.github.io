@@ -193,12 +193,18 @@ function ring(w, d, r, wall, h) {
   return geo;
 }
 
-function flatRoundRect(w, d, r) {
-  const geo = new THREE.ShapeGeometry(roundedRectShape(w, d, r), 16);
-  geo.rotateX(-Math.PI / 2);
+// A PlaneGeometry with rounded corners (xy-plane, same 0..1 UV layout).
+function roundPlane(w, h, r) {
+  const geo = new THREE.ShapeGeometry(roundedRectShape(w, h, r), 16);
   // ShapeGeometry UVs are in shape units; normalise to 0..1
   const uv = geo.getAttribute('uv');
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / w + 0.5, uv.getY(i) / d + 0.5);
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / w + 0.5, uv.getY(i) / h + 0.5);
+  return geo;
+}
+
+function flatRoundRect(w, d, r) {
+  const geo = roundPlane(w, d, r);
+  geo.rotateX(-Math.PI / 2);
   return geo;
 }
 
@@ -498,8 +504,7 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   anchor('casing', topCase, 1.42, T + 0.005, 0.98);
 
   // palm-rest grime (cleaned in stage 5 along with the lid)
-  const palmGrime = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.12, 0.95), grimeMaterial(TX.grimeTexture(1024, 320, 44), 0.55));
-  palmGrime.rotation.x = -Math.PI / 2;
+  const palmGrime = new THREE.Mesh(flatRoundRect(W - 0.12, 0.95, 0.13), grimeMaterial(TX.grimeTexture(1024, 320, 44), 0.55));
   palmGrime.position.set(0, T + 0.0016, 0.6);
   topCase.add(palmGrime);
 
@@ -539,7 +544,8 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
     depthWrite: false,
     envMapIntensity: 0.5,
   });
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.07, D - 0.07), glassMat);
+  // rounded like the bezel: square corners would stick out past the lid's rounded ones
+  const glass = new THREE.Mesh(roundPlane(W - 0.07, D - 0.07, r - 0.04), glassMat);
   glass.position.set(0, D / 2, 0.0032);
   lid.add(glass);
   const cam = new THREE.Mesh(new THREE.CircleGeometry(0.016, 20), new THREE.MeshStandardMaterial({ color: 0x0d1a26, roughness: 0.1, metalness: 0.4 }));
@@ -553,7 +559,7 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
 
   // outer face: grime, previous owner's sticker, Reform asset tag
   const outerZ = -DIM.lidT - 0.0009;
-  const lidGrime = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.07, D - 0.07), grimeMaterial(TX.grimeTexture(), 0.85));
+  const lidGrime = new THREE.Mesh(roundPlane(W - 0.07, D - 0.07, r - 0.04), grimeMaterial(TX.grimeTexture(), 0.85));
   lidGrime.position.set(0, D / 2, outerZ);
   lidGrime.rotation.x = Math.PI;
   lid.add(lidGrime);

@@ -592,6 +592,21 @@ em { font-style: italic; }
   text-wrap: balance;
 }
 .handoff__title em { color: var(--orange-2); }
+/* With the 3D story running, the dark chapter slides up underneath the dive into the
+   laptop (story.js): the handoff is see-through, so the display filling the viewport
+   is the backdrop its heading rises onto. */
+.has-story .dark-chapter {
+  margin-top: -100vh;
+  margin-top: -100svh;
+  background: none;
+  pointer-events: none;
+  /* apply at once, so ScrollTrigger measures the new layout (the reduced-motion rule
+     would otherwise turn this change into a transition) */
+  transition: none;
+}
+.has-story .dark-chapter > :not(.handoff) { background: var(--night); pointer-events: auto; }
+/* room for ascenders and descenders inside the heading's line masks */
+.handoff__line-mask { padding-block: 0.2em; margin-block: -0.2em; }
 
 .equipment { position: relative; }
 .equipment__pin {

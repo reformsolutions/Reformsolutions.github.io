@@ -172,9 +172,10 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
   shot('qc', 6.48, 0.5, { shiftX: mobile ? 0 : 0.12 });
   tl.to(S, { ready: 0.02, duration: 0.02, ease: 'none' }, 6.84)
     .to(S, { ready: 1, duration: 0.42, ease: 'none' }, 6.86)
-    .to(S, { dive: 1, duration: 0.6, ease: 'none' }, 7.36)
-    .to(S, { glass: 0, duration: 0.3, ease: 'none' }, 7.4)
-    .to(S, { fade: 1, duration: 0.28, ease: 'none' }, 7.58);
+    .to(S, { dive: 1, duration: 0.44, ease: 'none' }, 7.34) // fills even a tall phone screen by 7.72
+    .to(S, { glass: 0, duration: 0.26, ease: 'none' }, 7.38)
+    .to(S, { fade: 1, duration: 0.2, ease: 'none' }, 7.52);
+  // …then the handoff heading rises onto the display (see initHandoff below)
 
   // ---- stage copy + rail ----
   panels.forEach((el, i) => {
@@ -200,7 +201,7 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
       activeStage = stage;
       railBtns.forEach((b, i) => b.classList.toggle('is-active', i + 1 === stage));
     }
-    const isDark = t > 7.62;
+    const isDark = t > 7.72; // the display fills the viewport from here
     if (isDark !== dark) {
       dark = isDark;
       onDark?.(dark);
@@ -231,13 +232,7 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
     });
   });
 
-  // Keep rendering until the dark chapter has fully covered the fixed canvas
-  ScrollTrigger.create({
-    trigger: '.dark-chapter',
-    start: 'top top',
-    onEnter: () => bench.setActive(false),
-    onLeaveBack: () => bench.setActive(true),
-  });
+  initHandoff({ bench, tl, reduced });
 
   // ---- auto-framing: tell the bench where the laptop may sit at each moment ----
   measureRects();
@@ -250,4 +245,44 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
   });
 
   return { timeline: tl, trigger };
+}
+
+// The closing line lands on the laptop's display. With the story running, the dark
+// chapter slides up underneath the dive and its first screen is see-through
+// (.has-story in main.css), so the display — filling the viewport by then — is the
+// backdrop the heading rises onto, in step with the scroll.
+function initHandoff({ bench, tl, reduced }) {
+  const handoff = document.querySelector('.handoff');
+  const eyebrow = handoff.querySelector('.eyebrow');
+  const heading = handoff.querySelector('.handoff__title');
+  eyebrow.removeAttribute('data-reveal'); // revealed here instead of by initReveals
+  heading.removeAttribute('data-split');
+
+  // starts as the display's own content finishes fading (7.72)
+  tl.fromTo(eyebrow, { autoAlpha: 0, y: reduced ? 0 : 16 }, { autoAlpha: 1, y: 0, duration: 0.12, ease: 'power2.out' }, 7.72);
+  if (reduced) {
+    tl.fromTo(heading, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: 'none' }, 7.75);
+  } else {
+    SplitText.create(heading, {
+      type: 'lines',
+      mask: 'lines',
+      linesClass: 'handoff__line',
+      autoSplit: true,
+      // on a re-split (resize) SplitText reverts the returned tween and syncs the new one
+      onSplit: (self) => {
+        const rise = gsap.fromTo(self.lines, { yPercent: 135 }, { yPercent: 0, duration: 0.16, ease: 'power3.out', stagger: { amount: 0.08 } });
+        tl.add(rise, 7.75); // ends by 7.99, inside the 8-unit timeline
+        return rise;
+      },
+    });
+  }
+  document.documentElement.classList.add('has-story');
+
+  // Keep rendering until the solid part of the dark chapter covers the fixed canvas
+  ScrollTrigger.create({
+    trigger: handoff,
+    start: 'bottom top',
+    onEnter: () => bench.setActive(false),
+    onLeaveBack: () => bench.setActive(true),
+  });
 }
