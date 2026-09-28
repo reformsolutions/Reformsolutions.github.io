@@ -43,8 +43,11 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const seg = (p, a, b) => clamp01((p - a) / (b - a));
 
 export class ScreenUI {
-  constructor() {
-    [this.canvas, this.ctx] = makeCanvas(W, H);
+  // `scale` shrinks the backing canvas (phones) while drawing code keeps 1280×800 units.
+  constructor({ scale = 1 } = {}) {
+    this.scale = scale;
+    this.steps = scale < 1 ? 200 : 400;
+    [this.canvas, this.ctx] = makeCanvas(Math.round(W * scale), Math.round(H * scale));
     this.texture = toTexture(this.canvas, { anisotropy: 4 });
     this.key = '';
     this.markNavy = new Path2D(MARK.navy);
@@ -67,7 +70,7 @@ export class ScreenUI {
 
   // Redraws only when the visible state actually changes (quantised).
   update(state) {
-    const k = `${state.mode}|${Math.round(state.p * 400)}|${Math.round((state.fade || 0) * 60)}`;
+    const k = `${state.mode}|${Math.round(state.p * this.steps)}|${Math.round((state.fade || 0) * 60)}`;
     if (k === this.key) return false;
     this.key = k;
     this.draw(state);
@@ -78,6 +81,7 @@ export class ScreenUI {
   draw({ mode, p = 0, fade = 0 }) {
     const ctx = this.ctx;
     ctx.save();
+    ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     if (mode === 'off') this.drawOff(ctx);

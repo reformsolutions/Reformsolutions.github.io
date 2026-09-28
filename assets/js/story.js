@@ -3,7 +3,7 @@
 // 6 grading · 7 quality check → dive into the screen (8).
 
 const CALLOUTS = [
-  { id: 'incoming', anchor: 'lidCorner', title: 'Unit RS-2231', detail: 'Incoming · condition unknown', dir: 'l' },
+  { id: 'incoming', anchor: 'lidCorner', title: 'Unit RS-2231', detail: 'Incoming · condition unknown', dir: 'l', desktopOnly: true },
   { id: 'tag', anchor: 'tag', title: 'Asset tag applied', detail: 'RS-2231 · logged at intake' },
   { id: 'sticker', anchor: 'sticker', title: 'Previous owner’s label', detail: 'Comes off at cleaning', dir: 'l' },
   { id: 'hinge', anchor: 'hinge', title: 'Hinges', detail: 'Firm · no wobble', status: 'Checked' },

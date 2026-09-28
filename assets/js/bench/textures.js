@@ -77,12 +77,13 @@ export function drawBarcode(ctx, text, x, y, w, h, color = '#111') {
 
 // ---- Keyboard legends --------------------------------------------------------
 // keys: [{ x, z, w, d, label, sub }], rect: keyboard bounds in model units.
-export function keyLegendTexture(keys, rect) {
+// `scale` shrinks the canvas (phones); drawing stays in 700px-per-unit space.
+export function keyLegendTexture(keys, rect, scale = 1) {
   const PX = 700; // pixels per model unit
   const cw = Math.round(rect.w * PX);
   const ch = Math.round(rect.d * PX);
-  const [c, ctx] = makeCanvas(cw, ch);
-  ctx.clearRect(0, 0, cw, ch);
+  const [c, ctx] = makeCanvas(Math.round(cw * scale), Math.round(ch * scale));
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.fillStyle = 'rgba(214, 222, 229, 0.82)';
   ctx.textBaseline = 'middle';
   for (const k of keys) {

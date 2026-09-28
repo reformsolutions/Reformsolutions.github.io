@@ -224,9 +224,9 @@ const ROWS = [
 // ---------------------------------------------------------------------------
 // Build
 // ---------------------------------------------------------------------------
-export function buildLaptop({ screen, renderer }) {
+export function buildLaptop({ screen, renderer, mobile = false }) {
   const { W, D, r } = DIM;
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const maxAniso = Math.min(mobile ? 4 : 8, renderer.capabilities.getMaxAnisotropy());
 
   // ---- materials ----
   const shellMat = patchScan(new THREE.MeshPhysicalMaterial({
@@ -476,7 +476,7 @@ export function buildLaptop({ screen, renderer }) {
     mesh.instanceMatrix.needsUpdate = true;
     topCase.add(mesh);
   }
-  const legendTex = TX.keyLegendTexture(legends, { x0: kb.x0, z0: kb.z0, w: 15 * U, d: kbDepth });
+  const legendTex = TX.keyLegendTexture(legends, { x0: kb.x0, z0: kb.z0, w: 15 * U, d: kbDepth }, mobile ? 0.62 : 1);
   legendTex.anisotropy = maxAniso;
   const legendPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(15 * U, kbDepth),
