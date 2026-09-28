@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reform Solutions — Refurbished IT &amp; IT Asset Lifecycle Management</title>
+  <meta name="description" content="Reform Solutions sources, refurbishes, tests and resells laptops, desktops, servers, monitors and networking equipment — and helps organisations retire old IT responsibly, with every drive wiped and value recovered.">
+  <meta name="theme-color" content="#FDF8EC">
+  <meta name="color-scheme" content="light">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Reform Solutions — Business IT, reformed.">
+  <meta property="og:description" content="Tested, wiped, graded and ready for work. Refurbished IT equipment and responsible end-of-life asset management.">
+  <meta property="og:image" content="assets/img/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+
+  <link rel="preload" href="assets/fonts/bodoni-moda.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/main.css">
+
+  <script>document.documentElement.classList.replace('no-js', 'js');</script>
+  <script defer src="vendor/gsap.min.js"></script>
+  <script defer src="vendor/ScrollTrigger.min.js"></script>
+  <script defer src="vendor/SplitText.min.js"></script>
+  <script defer src="vendor/DrawSVGPlugin.min.js"></script>
+  <script defer src="vendor/MotionPathPlugin.min.js"></script>
+  <script defer src="vendor/CustomEase.min.js"></script>
+  <script defer src="vendor/lenis.min.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Inline symbols used across the page -->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="rj45" viewBox="0 0 72 32">
+      <path fill="currentColor" d="M0 12.5 6 11v10l-6-1.5z"/>
+      <rect fill="currentColor" x="6" y="13" width="20" height="6"/>
+      <rect fill="currentColor" x="8" y="7.5" width="3.2" height="17" rx="1.2"/>
+      <rect fill="currentColor" x="13.4" y="6.5" width="3.2" height="19" rx="1.2"/>
+      <rect fill="currentColor" x="18.8" y="6.5" width="3.2" height="19" rx="1.2"/>
+      <path fill="currentColor" fill-rule="evenodd" d="M26 4h41.5a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H26zm5 5.5v13h9v-13z"/>
+      <g fill="var(--paper, #FDF8EC)"><rect x="50" y="9" width="17" height="2.2" rx="1.1"/><rect x="50" y="13.2" width="17" height="2.2" rx="1.1"/><rect x="50" y="17.4" width="17" height="2.2" rx="1.1"/><rect x="50" y="21.6" width="17" height="2.2" rx="1.1"/></g>
+    </symbol>
+    <symbol id="arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 12h15M13 6l6 6-6 6"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.2 4.2L19 7"/></symbol>
+  </svg>
+
+  <!-- Preloader: the monogram is drawn in from its traced outline -->
+  <div class="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <svg class="preloader__mark" viewBox="0 0 1586 975"></svg>
+      <div class="preloader__meta mono">
+        <span class="preloader__label">Preparing the bench</span>
+        <span class="preloader__pct">00</span>
+      </div>
+    </div>
+  </div>
+
+  <header class="nav" data-nav>
+    <a class="nav__logo" href="#top" aria-label="Reform Solutions — back to top">
+      <svg class="nav__word" viewBox="0 0 1320 505" aria-hidden="true"><use href="assets/img/brand.svg#rs-wordmark"/></svg>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#process">Process</a>
+      <a href="#equipment">Equipment</a>
+      <a href="#business">For business</a>
+      <a href="#impact">Sustainability</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn--sm nav__cta" href="#contact"><span>Get a quote</span><svg class="btn__icon" aria-hidden="true"><use href="#arrow"/></svg></a>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="menu">
+      <span class="nav__toggle-label">Menu</span><span class="nav__toggle-lines" aria-hidden="true"></span>
+    </button>
+  </header>
+
+  <div class="menu" id="menu" hidden>
+    <nav aria-label="Mobile">
+      <a href="#process"><span class="mono">01</span>Process</a>
+      <a href="#equipment"><span class="mono">02</span>Equipment</a>
+      <a href="#business"><span class="mono">03</span>For business</a>
+      <a href="#impact"><span class="mono">04</span>Sustainability</a>
+      <a href="#faq"><span class="mono">05</span>FAQ</a>
+      <a href="#contact"><span class="mono">06</span>Contact</a>
+    </nav>
+  </div>
+
+  <!-- 3D bench: fixed behind the hero + process story -->
+  <div class="bench-grid" aria-hidden="true"></div>
+  <canvas class="bench" aria-hidden="true"></canvas>
+  <div class="callouts" aria-hidden="true"></div>
+
+  <main id="main">
+    <div class="story">
+      <!-- ============ HERO ============ -->
+      <section class="hero" id="top">
+        <div class="hero__grid wrap">
+          <div class="hero__copy">
+            <p class="eyebrow" data-reveal>IT asset refurbishment &amp; lifecycle management</p>
+            <h1 class="hero__title">Business IT, <em>reformed.</em></h1>
+            <p class="hero__lede" data-reveal>Tested, wiped, graded and ready for work. We source, refurbish and resell laptops, desktops, servers, monitors and networking equipment — and help organisations retire old IT responsibly.</p>
+            <div class="hero__actions" data-reveal>
+              <a class="btn" href="#equipment"><span>See what we stock</span><svg class="btn__icon" aria-hidden="true"><use href="#arrow"/></svg></a>
+              <a class="btn btn--ghost" href="#business"><span>Retire your IT assets</span></a>
+            </div>
+          </div>
+        </div>
+        <div class="hero__foot wrap">
+          <p class="scroll-cue mono"><span class="scroll-cue__line" aria-hidden="true"></span>Scroll to follow one laptop across our bench</p>
+          <ul class="hero__cats mono" aria-label="Equipment we handle">
+            <li>Laptops</li><li>Desktops</li><li>Servers</li><li>Monitors</li><li>Networking</li><li>Accessories</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ PROCESS (scroll-driven 3D story) ============ -->
+      <section class="process" id="process" aria-labelledby="process-title">
+        <h2 class="visually-hidden" id="process-title">Our refurbishment process, in seven stages</h2>
+        <div class="process__ui">
+          <div class="process__shade" aria-hidden="true"></div>
+          <div class="process__panels wrap">
+            <article class="stage" data-stage="1">
+              <p class="stage__num mono"><b>01</b><span>/ 07</span> Sourcing</p>
+              <h3 class="stage__title">Most of what we sell had a desk job before.</h3>
+              <p class="stage__text">We buy from companies refreshing their fleets, from lease returns and in bulk lots. Every unit is logged the day it arrives and given an asset tag that follows it through everything that comes next.</p>
+              <ul class="stage__list mono"><li>Corporate refreshes</li><li>Lease returns</li><li>Bulk lots</li><li>Dealer trade-ins</li></ul>
+            </article>
+            <article class="stage" data-stage="2">
+              <p class="stage__num mono"><b>02</b><span>/ 07</span> Inspection</p>
+              <h3 class="stage__title">We look before we plug anything in.</h3>
+              <p class="stage__text">Casing, hinges, screen, keyboard, ports. Every scuff and missing screw goes on the unit’s record, so the grade it gets later is based on what we found — not on a guess.</p>
+              <ul class="stage__list mono"><li>Casing &amp; hinges</li><li>Display glass</li><li>Keys &amp; trackpad</li><li>Ports &amp; slots</li></ul>
+            </article>
+            <article class="stage" data-stage="3">
+              <p class="stage__num mono"><b>03</b><span>/ 07</span> Hardware testing</p>
+              <h3 class="stage__title">Then every part has to prove itself.</h3>
+              <p class="stage__text">Battery, storage, memory, processor and thermals, display, keyboard, wireless and every port — tested one by one, with results logged against the asset tag. Parts that fail are replaced, or the unit doesn’t move on.</p>
+              <ul class="stage__list mono"><li>Battery</li><li>Storage</li><li>Memory</li><li>CPU &amp; thermals</li><li>Display</li><li>Input</li><li>Wireless</li><li>Ports</li></ul>
+            </article>
+            <article class="stage" data-stage="4">
+              <p class="stage__num mono"><b>04</b><span>/ 07</span> Data sanitization</p>
+              <h3 class="stage__title">The last owner’s data stays with the last owner.</h3>
+              <p class="stage__text">Every drive is wiped, and the wipe is verified, before a device goes anywhere else. Nothing from a machine’s previous life survives into its next one.</p>
+              <ul class="stage__list mono"><li>Full overwrite</li><li>Verification pass</li><li>Logged per device</li></ul>
+            </article>
+            <article class="stage" data-stage="5">
+              <p class="stage__num mono"><b>05</b><span>/ 07</span> Cleaning</p>
+              <h3 class="stage__title">Then it gets a proper clean.</h3>
+              <p class="stage__text">Vents and fans blown out, keyboards and screens cleaned, casing wiped down, old labels off. Small cosmetic fixes where they make sense.</p>
+              <ul class="stage__list mono"><li>Dust-out</li><li>Deep clean</li><li>Label removal</li><li>Touch-ups</li></ul>
+            </article>
+            <article class="stage" data-stage="6">
+              <p class="stage__num mono"><b>06</b><span>/ 07</span> Grading</p>
+              <h3 class="stage__title">Graded honestly. Priced to match.</h3>
+              <p class="stage__text">Each unit gets a cosmetic grade based on what we recorded at inspection. Functionally, every grade is the same: it works.</p>
+              <dl class="grades">
+                <div class="grades__row is-active"><dt>A</dt><dd>Minimal signs of use. Looks close to new.</dd></div>
+                <div class="grades__row"><dt>B</dt><dd>Light marks or scuffs. Fully working.</dd></div>
+                <div class="grades__row"><dt>C</dt><dd>Visible wear. Fully working, priced lower.</dd></div>
+              </dl>
+            </article>
+            <article class="stage" data-stage="7">
+              <p class="stage__num mono"><b>07</b><span>/ 07</span> Quality check</p>
+              <h3 class="stage__title">One more check, then it ships.</h3>
+              <p class="stage__text">A final pass against the unit’s test record before it’s packed. If anything doesn’t match, it goes back on the bench.</p>
+              <ul class="stage__list mono"><li>Final functional check</li><li>Record matched</li><li>Packed for dispatch</li></ul>
+            </article>
+          </div>
+
+          <nav class="rail mono" aria-label="Process stages">
+            <ol>
+              <li><button type="button" data-go="1"><span>01</span>Sourcing</button></li>
+              <li><button type="button" data-go="2"><span>02</span>Inspection</button></li>
+              <li><button type="button" data-go="3"><span>03</span>Testing</button></li>
+              <li><button type="button" data-go="4"><span>04</span>Data wipe</button></li>
+              <li><button type="button" data-go="5"><span>05</span>Cleaning</button></li>
+              <li><button type="button" data-go="6"><span>06</span>Grading</button></li>
+              <li><button type="button" data-go="7"><span>07</span>QC</button></li>
+            </ol>
+            <span class="rail__bar" aria-hidden="true"><i></i></span>
+          </nav>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ HANDOFF + EQUIPMENT (dark) ============ -->
+    <div class="dark-chapter" data-theme="dark">
+      <section class="handoff">
+        <div class="wrap">
+          <p class="eyebrow eyebrow--light" data-reveal>RS-2231 · Grade A · Passed</p>
+          <h2 class="handoff__title" data-split>That was one laptop. <em>Everything</em> we sell goes through the same bench.</h2>
+        </div>
+      </section>
+
+      <section class="equipment" id="equipment" aria-labelledby="equipment-title">
+        <div class="equipment__pin">
+          <div class="equipment__word" aria-hidden="true">Equipment</div>
+          <div class="equipment__track">
+            <div class="eq-intro">
+              <p class="eyebrow eyebrow--light">What we deal in</p>
+              <h2 class="eq-intro__title" id="equipment-title">Six kinds of hardware. <em>One standard.</em></h2>
+              <p class="eq-intro__text">Single units or pallets, for one new hire or a whole floor. Tell us what you need and we’ll tell you what we have — with the grade and specs spelled out for every unit.</p>
+              <p class="eq-intro__hint mono">Keep scrolling <svg aria-hidden="true"><use href="#arrow"/></svg></p>
+            </div>
+
+            <article class="eq-card">
+              <div class="eq-card__art" data-art="laptop" aria-hidden="true"></div>
+              <div class="eq-card__body">
+                <p class="eq-card__num mono">01</p>
+                <h3 class="eq-card__title">Laptops</h3>
+                <p>Business notebooks from the major manufacturers — built for years of daily use, which is exactly why they refurbish so well.</p>
+                <ul class="chips mono"><li>Business series</li><li>Ultrabooks</li><li>Mobile workstations</li></ul>
+              </div>
+            </article>
+            <article class="eq-card">
+              <div class="eq-card__art" data-art="desktop" aria-hidden="true"></div>
+              <div class="eq-card__body">
+                <p class="eq-card__num mono">02</p>
+                <h3 class="eq-card__title">Desktops</h3>
+                <p>Towers, small-form-factor and all-in-one PCs for offices, labs, classrooms and front desks.</p>
+                <ul class="chips mono"><li>Tower</li><li>SFF &amp; mini</li><li>All-in-one</li></ul>
+              </div>
+            </article>
+            <article class="eq-card">
+              <div class="eq-card__art" data-art="server" aria-hidden="true"></div>
+              <div class="eq-card__body">
+                <p class="eq-card__num mono">03</p>
+                <h3 class="eq-card__title">Servers</h3>
+                <p>Rack and tower servers, plus the drives, memory and parts that keep existing infrastructure running.</p>
+                <ul class="chips mono"><li>Rack</li><li>Tower</li><li>Drives &amp; memory</li></ul>
+              </div>
+            </article>
+            <article class="eq-card">
+              <div class="eq-card__art" data-art="monitor" aria-hidden="true"></div>
+              <div class="eq-card__body">
+                <p class="eq-card__num mono">04</p>
+                <h3 class="eq-card__title">Monitors</h3>
+                <p>Office and professional displays, checked for dead pixels, backlight bleed and wobbly stands.</p>
+                <ul class="chips mono"><li>Office</li><li>Widescreen</li><li>Professional</li></ul>
+              </div>
+            </article>
+            <article class="eq-card">
+              <div class="eq-card__art" data-art="network" aria-hidden="true"></div>
+              <div class="eq-card__body">
+                <p class="eq-card__num mono">05</p>
+                <h3 class="eq-card__title">Networking</h3>
+                <p>Switches, routers, firewalls and access points — tested, reset to factory settings and ready to configure.</p>
+                <ul class="chips mono"><li>Switches</li><li>Routers &amp; firewalls</li><li>Wi‑Fi</li></ul>
+              </div>
+            </article>
+            <article class="eq-card">
+              <div class="eq-card__art" data-art="accessories" aria-hidden="true"></div>
+              <div class="eq-card__body">
+                <p class="eq-card__num mono">06</p>
+                <h3 class="eq-card__title">Accessories</h3>
+                <p>Docks, chargers, keyboards, mice and cables — the small things that finish a setup.</p>
+                <ul class="chips mono"><li>Docks</li><li>Power</li><li>Input</li><li>Cables</li></ul>
+              </div>
+            </article>
+            <div class="eq-end">
+              <p class="eq-end__text">Looking for something specific?</p>
+              <a class="btn btn--light" href="#contact"><span>Ask for a stock list</span><svg class="btn__icon" aria-hidden="true"><use href="#arrow"/></svg></a>
+            </div>
+          </div>
+          <div class="equipment__cable" aria-hidden="true">
+            <span class="equipment__wire"></span>
+            <svg class="equipment__plug"><use href="#rj45"/></svg>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ FOR BUSINESS (ITAD) ============ -->
+    <section class="business" id="business" aria-labelledby="business-title">
+      <div class="business__pin">
+        <div class="wrap business__head">
+          <p class="eyebrow" data-reveal>For businesses</p>
+          <h2 class="section-title" id="business-title" data-split>Retiring old equipment? <em>We’ll take it from here.</em></h2>
+          <p class="business__lede" data-reveal>Hardware that’s reached the end of its life on your books usually still has value in the market. We collect it, wipe it, and either refurbish it for resale or recycle it responsibly — and you get a clear account of what happened to every unit.</p>
+        </div>
+        <div class="route wrap" data-route>
+          <svg class="route__svg" aria-hidden="true">
+            <path class="route__ghost route__ghost--trunk"/>
+            <path class="route__ghost route__ghost--a"/>
+            <path class="route__ghost route__ghost--b"/>
+            <path class="route__cable route__cable--trunk"/>
+            <path class="route__cable route__cable--a"/>
+            <path class="route__cable route__cable--b"/>
+            <g class="route__nodes"></g>
+            <g class="route__plug route__plug--trunk"><use href="#rj45" width="72" height="32" x="-36" y="-16"/></g>
+            <g class="route__plug route__plug--a"><use href="#rj45" width="72" height="32" x="-36" y="-16"/></g>
+            <g class="route__plug route__plug--b"><use href="#rj45" width="72" height="32" x="-36" y="-16"/></g>
+          </svg>
+          <ol class="route__steps">
+            <li class="route__step" data-node="0"><span class="mono">01</span><h3>List it</h3><p>Send us what you have — models, quantities, rough condition. A spreadsheet is fine. So is a photo of a storeroom.</p></li>
+            <li class="route__step" data-node="1"><span class="mono">02</span><h3>We collect</h3><p>Packed and logged at your site, so every unit is accounted for from the moment it leaves.</p></li>
+            <li class="route__step" data-node="2"><span class="mono">03</span><h3>Data wiped</h3><p>Every drive sanitized and verified before anything else happens to it.</p></li>
+            <li class="route__step route__step--end" data-node="3"><span class="mono">04 — Reuse</span><h3>Value back to you</h3><p>Units with life left are refurbished and resold, so you recover value from equipment you’d already written off.</p></li>
+            <li class="route__step route__step--end" data-node="4"><span class="mono">04 — Recycle</span><h3>Recycled properly</h3><p>Anything that can’t be reused goes to responsible e-waste recycling. Not landfill, not a back room.</p></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHO WE WORK WITH ============ -->
+    <section class="clients" aria-labelledby="clients-title">
+      <div class="wrap">
+        <div class="clients__head">
+          <p class="eyebrow" data-reveal>Who we work with</p>
+          <h2 class="section-title" id="clients-title" data-split>Built for people who buy <em>more than one.</em></h2>
+        </div>
+        <ul class="clients__list">
+          <li class="client"><span class="client__name">Corporates</span><span class="client__note">Fleet refreshes and end-of-life collection, handled start to finish.</span><svg class="client__plug" aria-hidden="true"><use href="#rj45"/></svg></li>
+          <li class="client"><span class="client__name">Enterprises</span><span class="client__note">Volume, consistency, and a process your compliance team can follow.</span><svg class="client__plug" aria-hidden="true"><use href="#rj45"/></svg></li>
+          <li class="client"><span class="client__name">Startups</span><span class="client__note">Kit out a growing team with reliable machines for a fraction of new.</span><svg class="client__plug" aria-hidden="true"><use href="#rj45"/></svg></li>
+          <li class="client"><span class="client__name">Dealers</span><span class="client__note">Graded stock in quantity, described accurately so you can resell with confidence.</span><svg class="client__plug" aria-hidden="true"><use href="#rj45"/></svg></li>
+          <li class="client"><span class="client__name">Institutions</span><span class="client__note">Schools, colleges and public bodies making budgets go further.</span><svg class="client__plug" aria-hidden="true"><use href="#rj45"/></svg></li>
+          <li class="client"><span class="client__name">Resellers</span><span class="client__note">A steady supply partner with transparent grading and honest condition reports.</span><svg class="client__plug" aria-hidden="true"><use href="#rj45"/></svg></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ PRINCIPLES ============ -->
+    <section class="principles" aria-labelledby="principles-title">
+      <div class="wrap">
+        <div class="principles__head">
+          <p class="eyebrow" data-reveal>How we work</p>
+          <h2 class="section-title" id="principles-title" data-split>Four things we <em>don’t compromise on.</em></h2>
+        </div>
+        <ol class="principles__grid">
+          <li class="principle"><span class="principle__num mono">01</span><h3>Dependable products</h3><p>Tested part by part and graded against written criteria. What we describe is what arrives.</p></li>
+          <li class="principle"><span class="principle__num mono">02</span><h3>Transparent process</h3><p>Ask what happened to any unit, at any step, and you’ll get a straight answer.</p></li>
+          <li class="principle"><span class="principle__num mono">03</span><h3>Sensible pricing</h3><p>Refurbished should mean real savings. We price by grade and condition, not by guesswork.</p></li>
+          <li class="principle"><span class="principle__num mono">04</span><h3>Long-term relationships</h3><p>Consistent stock, consistent grading, the same people on the phone. We’d rather be your supplier for years than your vendor for a week.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ SUSTAINABILITY ============ -->
+    <section class="impact" id="impact" data-theme="dark" aria-labelledby="impact-title">
+      <div class="wrap impact__grid">
+        <div class="impact__copy">
+          <p class="eyebrow eyebrow--light" data-reveal>Sustainability</p>
+          <h2 class="impact__title" id="impact-title" data-split>Reuse first. <em>Recycle right.</em></h2>
+          <p class="impact__text" data-reveal>The greenest laptop is usually the one that already exists. Every device we put back into service is one less that has to be made from scratch — and when something truly can’t be reused, it’s recycled properly, not dumped.</p>
+          <ol class="impact__points">
+            <li data-reveal><span class="mono">Extend</span>Refurbish and redeploy wherever the hardware allows.</li>
+            <li data-reveal><span class="mono">Recover</span>Harvest working parts from units that can’t be saved.</li>
+            <li data-reveal><span class="mono">Recycle</span>Send what’s left to responsible e-waste processing.</li>
+          </ol>
+        </div>
+        <div class="impact__loop" aria-hidden="true">
+          <svg class="loop" viewBox="-300 -300 600 600">
+            <!-- three cable arcs, each ending in a plug that noses into the next -->
+            <g class="loop__ring">
+              <path class="loop__arc" d="M 0 -220 A 220 220 0 0 1 213.5 53.2"/>
+              <path class="loop__arc" d="M 190.5 110 A 220 220 0 0 1 -152.8 158.2"/>
+              <path class="loop__arc" d="M -190.5 110 A 220 220 0 0 1 -60.6 -211.5"/>
+              <use class="loop__plug" href="#rj45" width="72" height="32" x="-36" y="-16" transform="translate(213.5 53.2) rotate(104) translate(28 0)"/>
+              <use class="loop__plug" href="#rj45" width="72" height="32" x="-36" y="-16" transform="translate(-152.8 158.2) rotate(224) translate(28 0)"/>
+              <use class="loop__plug" href="#rj45" width="72" height="32" x="-36" y="-16" transform="translate(-60.6 -211.5) rotate(344) translate(28 0)"/>
+            </g>
+            <g class="loop__labels mono">
+              <text x="214" y="-168" text-anchor="start">EXTEND</text>
+              <text x="36" y="282" text-anchor="middle">RECOVER</text>
+              <text x="-256" y="-100" text-anchor="end">RECYCLE</text>
+            </g>
+            <use class="loop__mark" href="assets/img/brand.svg#rs-mark" width="220" height="135" x="-110" y="-68"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="faq" id="faq" aria-labelledby="faq-title">
+      <div class="wrap faq__grid">
+        <div class="faq__head">
+          <p class="eyebrow" data-reveal>Questions</p>
+          <h2 class="section-title" id="faq-title" data-split>The things <em>people ask first.</em></h2>
+          <p class="faq__more" data-reveal>Something else? <a href="#contact">Ask us directly</a>.</p>
+        </div>
+        <div class="faq__list">
+          <div class="qa">
+            <h3><button type="button" aria-expanded="false" aria-controls="qa-1" id="qa-1-btn">Do you buy used IT equipment?<i aria-hidden="true"></i></button></h3>
+            <div class="qa__panel" id="qa-1" role="region" aria-labelledby="qa-1-btn"><div><p>Yes. We buy from businesses, institutions and dealers — single lots or whole fleets. Send us a list and we’ll come back with an offer.</p></div></div>
+          </div>
+          <div class="qa">
+            <h3><button type="button" aria-expanded="false" aria-controls="qa-2" id="qa-2-btn">What happens to the data on devices we hand over?<i aria-hidden="true"></i></button></h3>
+            <div class="qa__panel" id="qa-2" role="region" aria-labelledby="qa-2-btn"><div><p>Every storage device is wiped, and the wipe is verified, before the unit is refurbished, resold or recycled. If you need records for your own compliance, ask and we’ll walk you through what we provide.</p></div></div>
+          </div>
+          <div class="qa">
+            <h3><button type="button" aria-expanded="false" aria-controls="qa-3" id="qa-3-btn">What do your grades mean?<i aria-hidden="true"></i></button></h3>
+            <div class="qa__panel" id="qa-3" role="region" aria-labelledby="qa-3-btn"><div><p><strong>A</strong> — minimal signs of use. <strong>B</strong> — light marks, fully working. <strong>C</strong> — visible wear, fully working. The grade describes appearance; every grade has passed the same functional tests.</p></div></div>
+          </div>
+          <div class="qa">
+            <h3><button type="button" aria-expanded="false" aria-controls="qa-4" id="qa-4-btn">Can you supply in bulk?<i aria-hidden="true"></i></button></h3>
+            <div class="qa__panel" id="qa-4" role="region" aria-labelledby="qa-4-btn"><div><p>Yes. We work with dealers, resellers and organisations buying in volume. Tell us the specs and quantities you’re after and we’ll put together what we can supply.</p></div></div>
+          </div>
+          <div class="qa">
+            <h3><button type="button" aria-expanded="false" aria-controls="qa-5" id="qa-5-btn">Is there a warranty on refurbished equipment?<i aria-hidden="true"></i></button></h3>
+            <div class="qa__panel" id="qa-5" role="region" aria-labelledby="qa-5-btn"><div><p>Warranty terms depend on the product and grade. We confirm them in writing with every quote, so you know exactly what’s covered before you buy.</p></div></div>
+          </div>
+          <div class="qa">
+            <h3><button type="button" aria-expanded="false" aria-controls="qa-6" id="qa-6-btn">What about equipment that can’t be refurbished?<i aria-hidden="true"></i></button></h3>
+            <div class="qa__panel" id="qa-6" role="region" aria-labelledby="qa-6-btn"><div><p>Working parts are recovered where possible, and the rest goes to responsible e-waste recycling.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section class="contact" id="contact" aria-labelledby="contact-title">
+      <div class="wrap contact__grid">
+        <div class="contact__intro">
+          <p class="eyebrow" data-reveal>Contact</p>
+          <h2 class="section-title" id="contact-title" data-split>Tell us what you need — <em>or what you need gone.</em></h2>
+          <p class="contact__text" data-reveal>Buying for a team, restocking as a dealer or clearing out a storeroom — send a few details and we’ll get back to you.</p>
+          <dl class="contact__details" data-reveal>
+            <div><dt class="mono">Email</dt><dd><a data-contact="email" href="mailto:enquiries@example.com">enquiries@example.com</a></dd></div>
+            <div><dt class="mono">Phone</dt><dd><a data-contact="phone" href="tel:+000000000000">+00 00000 00000</a></dd></div>
+          </dl>
+        </div>
+
+        <form class="enquiry" novalidate data-reveal>
+          <fieldset class="enquiry__intent">
+            <legend class="mono">I’m looking to</legend>
+            <label><input type="radio" name="intent" value="Buy refurbished IT" checked><span>Buy refurbished</span></label>
+            <label><input type="radio" name="intent" value="Sell or retire IT assets"><span>Sell or retire assets</span></label>
+            <label><input type="radio" name="intent" value="Recycle e-waste"><span>Recycle e-waste</span></label>
+            <label><input type="radio" name="intent" value="Something else"><span>Something else</span></label>
+          </fieldset>
+          <div class="enquiry__row">
+            <label class="field"><span class="field__label mono">Name</span><input name="name" autocomplete="name" required></label>
+            <label class="field"><span class="field__label mono">Company</span><input name="company" autocomplete="organization"></label>
+          </div>
+          <div class="enquiry__row">
+            <label class="field"><span class="field__label mono">Email</span><input name="email" type="email" autocomplete="email" required></label>
+            <label class="field"><span class="field__label mono">Phone <em>(optional)</em></span><input name="phone" type="tel" autocomplete="tel"></label>
+          </div>
+          <label class="field"><span class="field__label mono">Approximate quantity</span>
+            <select name="quantity">
+              <option>1–10 units</option><option>11–50 units</option><option>51–200 units</option><option>200+ units</option><option>Not sure yet</option>
+            </select>
+          </label>
+          <label class="field"><span class="field__label mono">Details</span><textarea name="message" rows="4" placeholder="Models, specs, condition, timelines — whatever you know."></textarea></label>
+          <div class="enquiry__foot">
+            <button class="btn" type="submit"><span>Send enquiry</span><svg class="btn__icon" aria-hidden="true"><use href="#arrow"/></svg></button>
+            <p class="enquiry__note mono" role="status" aria-live="polite">Opens your email app with the details filled in.</p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" data-theme="dark">
+    <div class="footer__stage">
+      <canvas class="footer__particles" aria-hidden="true"></canvas>
+      <p class="footer__sign">Built once. <em>Used again.</em></p>
+    </div>
+    <div class="wrap footer__grid">
+      <div class="footer__brand">
+        <svg class="footer__word" viewBox="0 0 1320 505" role="img" aria-label="Reform Solutions"><use href="assets/img/brand.svg#rs-wordmark"/></svg>
+        <p>IT asset refurbishment and lifecycle management — sourcing, testing, resale and responsible disposal of business IT.</p>
+      </div>
+      <nav class="footer__col" aria-label="Footer">
+        <p class="mono">Explore</p>
+        <a href="#process">Process</a><a href="#equipment">Equipment</a><a href="#business">For business</a><a href="#impact">Sustainability</a><a href="#faq">FAQ</a>
+      </nav>
+      <div class="footer__col">
+        <p class="mono">Get in touch</p>
+        <a data-contact="email" href="mailto:enquiries@example.com">enquiries@example.com</a>
+        <a data-contact="phone" href="tel:+000000000000">+00 00000 00000</a>
+        <a href="#contact">Send an enquiry</a>
+      </div>
+    </div>
+    <div class="wrap footer__base mono">
+      <span>© <span data-year>2026</span> Reform Solutions</span>
+      <a href="#top" class="footer__top">Back to top <svg aria-hidden="true"><use href="#arrow"/></svg></a>
+    </div>
+  </footer>
+</body>
+</html>
