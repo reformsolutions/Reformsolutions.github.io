@@ -47,7 +47,9 @@ async function boot() {
   let lenis = null;
   if (!reduced) {
     lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.95, touchMultiplier: 1.4 });
-    lenis.on('scroll', ScrollTrigger.update);
+    // ScrollTrigger hears native (touch) scrolling by itself; only Lenis' own smooth scrolling
+    // needs relaying in the same frame (relaying every event updated all triggers twice)
+    lenis.on('scroll', () => lenis.isSmooth && ScrollTrigger.update());
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
     lenis.stop();

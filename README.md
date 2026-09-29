@@ -42,8 +42,19 @@ If you change the copy length or layout, the framing adapts on its own.
 
 - `vendor/three.min.js` is a trimmed three.js build (see `vendor/README.md`).
 - The 3D canvas renders only when something changes; the idle hero float runs at 30fps.
+- Draw calls are kept low: static laptop parts that share a material are baked into one mesh
+  (`bake()` in `laptop.js`), labelled boxes use two material groups (`topBox()`), and the keyboard
+  and screen sides aren't drawn while the lid is shut (~50 draw calls in the exploded view, not ~150).
 - Render resolution is capped by a pixel budget and lowered automatically on slow devices.
-- Shaders and textures are prepared during the preloader so the exploded view doesn't stutter.
+- Phones: at most 1.5× pixel ratio, no clear-coat layer, screen-texture redraws capped at ~30 a second,
+  and a shorter scroll catch-up (scrub) on touch screens. The canvas is sized to the large viewport
+  height, so the address bar sliding in and out doesn't resize it.
+- Shaders, textures and every part's geometry are prepared during the preloader (one draw with
+  everything visible), so parts that appear mid-story don't stutter.
+- This is a long page, so a forced layout or a repaint of the whole page costs a phone tens of
+  milliseconds. Don't read layout (`offsetTop`, `getBoundingClientRect`…) in scroll handlers, don't
+  animate layout properties like `top` in CSS, and give elements that the story animates inside the
+  normal page flow `will-change` so each frame doesn't repaint everything.
 - The footer particles stop animating once the logo has formed.
 - The full logo preloader plays once per visit; later page loads get a short fade.
 

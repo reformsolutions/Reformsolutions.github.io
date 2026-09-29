@@ -214,11 +214,14 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
   });
 
   // ---- scroll binding ----
+  // Touch scrolling follows the finger directly, so the 3D trails it by less there;
+  // a long catch-up that reads as smooth with a wheel feels laggy under a finger.
+  const touch = window.matchMedia('(pointer: coarse)').matches;
   const trigger = ScrollTrigger.create({
     trigger: story,
     start: 'top top',
     end: 'bottom bottom',
-    scrub: reduced ? true : 0.9,
+    scrub: reduced ? true : touch ? 0.5 : 0.9,
     animation: tl,
   });
 

@@ -214,6 +214,41 @@ function box(w, h, d, mat, x = 0, y = 0, z = 0) {
   return m;
 }
 
+// Bake static parts that share a material into one geometry: one draw call instead of
+// one per part (phones pay dearly for draw calls). Items: [geometry, [x,y,z], [rx,ry,rz], [sx,sy,sz]].
+const bakeM = new THREE.Matrix4();
+const bakeQ = new THREE.Quaternion();
+const bakeE = new THREE.Euler();
+const bakeP = new THREE.Vector3();
+const bakeS = new THREE.Vector3();
+function bake(items) {
+  const geos = items.map(([geo, pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1]]) => {
+    const g = geo.index ? geo.toNonIndexed() : geo.clone();
+    bakeM.compose(bakeP.set(...pos), bakeQ.setFromEuler(bakeE.set(...rot)), bakeS.set(...scale));
+    return g.applyMatrix4(bakeM);
+  });
+  const out = new THREE.BufferGeometry();
+  for (const name of ['position', 'normal', 'uv']) {
+    if (!geos.every((g) => g.getAttribute(name))) continue;
+    const arrays = geos.map((g) => g.getAttribute(name).array);
+    const all = new Float32Array(arrays.reduce((n, a) => n + a.length, 0));
+    arrays.reduce((at, a) => (all.set(a, at), at + a.length), 0);
+    out.setAttribute(name, new THREE.BufferAttribute(all, geos[0].getAttribute(name).itemSize));
+  }
+  return out;
+}
+
+// A box whose top face takes the second material (labels, PCB print): 2 draw calls, not 6.
+function topBox(w, h, d) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const idx = [...geo.index.array];
+  geo.setIndex([...idx.slice(0, 12), ...idx.slice(18), ...idx.slice(12, 18)]); // +y face last
+  geo.clearGroups();
+  geo.addGroup(0, 30, 0);
+  geo.addGroup(30, 6, 1);
+  return geo;
+}
+
 // ---------------------------------------------------------------------------
 // Keyboard layout (15 units wide)
 // ---------------------------------------------------------------------------
@@ -235,17 +270,14 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   const maxAniso = Math.min(mobile ? 4 : 8, renderer.capabilities.getMaxAnisotropy());
 
   // ---- materials ----
-  const shellMat = patchScan(new THREE.MeshPhysicalMaterial({
-    color: 0x1c2e41,
-    metalness: 0.62,
-    roughness: 0.42,
-    clearcoat: 0.16,
-    clearcoatRoughness: 0.45,
-  }));
+  // Phones skip the clearcoat layer (a second specular pass on the biggest surfaces).
+  const Glossy = mobile ? THREE.MeshStandardMaterial : THREE.MeshPhysicalMaterial;
+  const gloss = (props, coat) => new Glossy(mobile ? props : { ...props, ...coat });
+  const shellMat = patchScan(gloss({ color: 0x1c2e41, metalness: 0.62, roughness: 0.42 }, { clearcoat: 0.16, clearcoatRoughness: 0.45 }));
   const interiorMat = patchScan(new THREE.MeshStandardMaterial({ color: 0x1a2835, metalness: 0.35, roughness: 0.72 }));
   const deckMat = patchScan(new THREE.MeshStandardMaterial({ color: 0x121a23, metalness: 0.2, roughness: 0.78 }));
   const keyMat = patchScan(new THREE.MeshStandardMaterial({ color: 0x151b22, metalness: 0.05, roughness: 0.6 }));
-  const padMat = patchScan(new THREE.MeshPhysicalMaterial({ color: 0x2a3e52, metalness: 0.45, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2 }));
+  const padMat = patchScan(gloss({ color: 0x2a3e52, metalness: 0.45, roughness: 0.3 }, { clearcoat: 0.8, clearcoatRoughness: 0.2 }));
   const bezelMat = patchScan(new THREE.MeshStandardMaterial({ color: 0x07090c, metalness: 0.1, roughness: 0.22 }));
   const portMat = new THREE.MeshStandardMaterial({ color: 0x05070a, roughness: 0.65 });
   const rubberMat = new THREE.MeshStandardMaterial({ color: 0x0c1014, roughness: 0.9 });
@@ -265,47 +297,42 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
     return o;
   };
 
+  // Static parts that share a material are baked into one mesh (see bake()).
+  const part = (w, h, d, x, y, z) => [new THREE.BoxGeometry(w, h, d), [x, y, z]];
+
   // ---- bottom tray ----
   const tray = new THREE.Group();
   root.add(tray);
-  const floor = new THREE.Mesh(slab(W, D, DIM.floorH + 0.012, r, 0.014), shellMat);
-  tray.add(floor);
-  const walls = new THREE.Mesh(ring(W, D, r, 0.035, DIM.trayH - 0.02), shellMat);
-  walls.position.y = 0.02;
-  tray.add(walls);
+  tray.add(new THREE.Mesh(bake([
+    [slab(W, D, DIM.floorH + 0.012, r, 0.014)],
+    [ring(W, D, r, 0.035, DIM.trayH - 0.02), [0, 0.02, 0]],
+  ]), shellMat));
+  // inside the tray: only drawn while the case is open
   const cavity = new THREE.Mesh(flatRoundRect(W - 0.08, D - 0.08, r - 0.04), interiorMat);
   cavity.position.y = DIM.floorH + 0.0125;
   tray.add(cavity);
-  // screw bosses inside the tray
+  // screw bosses
   const bossGeo = new THREE.CylinderGeometry(0.026, 0.03, 0.03, 16);
-  for (const [x, z] of [[-1.45, -0.95], [1.45, -0.95], [-1.45, 0.95], [1.45, 0.95], [0, 0.98], [-0.7, -0.98], [0.7, -0.98], [-1.5, 0], [1.5, 0]]) {
-    const b = new THREE.Mesh(bossGeo, alumMat);
-    b.position.set(x, DIM.floorH + 0.028, z);
-    tray.add(b);
-  }
+  const bosses = new THREE.Mesh(bake([[-1.45, -0.95], [1.45, -0.95], [-1.45, 0.95], [1.45, 0.95], [0, 0.98], [-0.7, -0.98], [0.7, -0.98], [-1.5, 0], [1.5, 0]]
+    .map(([x, z]) => [bossGeo, [x, DIM.floorH + 0.028, z]])), alumMat);
+  tray.add(bosses);
   // rubber feet
-  for (const z of [-0.82, 0.86]) {
-    const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 2.3, 4, 12), rubberMat);
-    f.rotation.z = Math.PI / 2;
-    f.scale.set(1, 1, 0.5);
-    f.position.set(0, -0.004, z);
-    tray.add(f);
-  }
+  const footGeo = new THREE.CapsuleGeometry(0.03, 2.3, 4, 12);
+  tray.add(new THREE.Mesh(bake([-0.82, 0.86].map((z) => [footGeo, [0, -0.004, z], [0, 0, Math.PI / 2], [1, 1, 0.5]])), rubberMat));
   // side ports (left: HDMI, RJ45, USB-C ×2, audio; right: USB-A ×2, SD)
   const portY = 0.074;
   const L = -W / 2 + 0.0035;
   const R = W / 2 - 0.0035;
-  tray.add(box(0.012, 0.042, 0.15, portMat, L, portY, -0.62));
-  tray.add(box(0.012, 0.07, 0.17, portMat, L, portY - 0.004, -0.34));
-  tray.add(box(0.012, 0.026, 0.085, portMat, L, portY, -0.05));
-  tray.add(box(0.012, 0.026, 0.085, portMat, L, portY, 0.1));
-  const jack = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.012, 20), portMat);
-  jack.rotation.z = Math.PI / 2;
-  jack.position.set(L, portY, 0.42);
-  tray.add(jack);
-  tray.add(box(0.012, 0.045, 0.13, portMat, R, portY, -0.32));
-  tray.add(box(0.012, 0.045, 0.13, portMat, R, portY, -0.1));
-  tray.add(box(0.012, 0.012, 0.22, portMat, R, portY, 0.38));
+  tray.add(new THREE.Mesh(bake([
+    part(0.012, 0.042, 0.15, L, portY, -0.62),
+    part(0.012, 0.07, 0.17, L, portY - 0.004, -0.34),
+    part(0.012, 0.026, 0.085, L, portY, -0.05),
+    part(0.012, 0.026, 0.085, L, portY, 0.1),
+    [new THREE.CylinderGeometry(0.017, 0.017, 0.012, 20), [L, portY, 0.42], [0, 0, Math.PI / 2]],
+    part(0.012, 0.045, 0.13, R, portY, -0.32),
+    part(0.012, 0.045, 0.13, R, portY, -0.1),
+    part(0.012, 0.012, 0.22, R, portY, 0.38),
+  ]), portMat));
   anchor('ports', tray, -W / 2 - 0.02, portY, -0.34);
 
   // ---- internals (hidden inside the tray until the exploded view) ----
@@ -321,13 +348,12 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   const labelTex = TX.batteryLabel();
   labelTex.anisotropy = maxAniso;
   const labelMat = new THREE.MeshStandardMaterial({ map: labelTex, roughness: 0.55 });
-  for (let i = -1; i <= 1; i++) {
-    const cell = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.05, 0.66), i === 0 ? [cellMat, cellMat, labelMat, cellMat, cellMat, cellMat] : cellMat);
-    cell.position.set(i * 0.8, 0.025, 0);
-    battery.add(cell);
-  }
-  battery.add(box(2.46, 0.012, 0.05, darkPlastic, 0, 0.006, -0.36));
-  battery.add(box(0.2, 0.01, 0.2, darkPlastic, 0.55, 0.004, -0.45));
+  const cellGeo = new THREE.BoxGeometry(0.76, 0.05, 0.66);
+  battery.add(new THREE.Mesh(bake([[cellGeo, [-0.8, 0.025, 0]], [cellGeo, [0.8, 0.025, 0]]]), cellMat));
+  const labelled = new THREE.Mesh(topBox(0.76, 0.05, 0.66), [cellMat, labelMat]);
+  labelled.position.y = 0.025;
+  battery.add(labelled);
+  battery.add(new THREE.Mesh(bake([part(2.46, 0.012, 0.05, 0, 0.006, -0.36), part(0.2, 0.01, 0.2, 0.55, 0.004, -0.45)]), darkPlastic));
   battery.position.set(0, DIM.floorH + 0.015, 0.56);
   anchor('battery', battery, 0.95, 0.05, 0.12);
 
@@ -336,31 +362,28 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   pcbTex.anisotropy = maxAniso;
   const pcbMat = new THREE.MeshStandardMaterial({ map: pcbTex, roughness: 0.5, metalness: 0.15 });
   const pcbEdge = new THREE.MeshStandardMaterial({ color: 0x0f1a24, roughness: 0.6 });
-  const pcb = new THREE.Mesh(new THREE.BoxGeometry(2.86, 0.012, 1.02), [pcbEdge, pcbEdge, pcbMat, pcbEdge, pcbEdge, pcbEdge]);
+  const pcb = new THREE.Mesh(topBox(2.86, 0.012, 1.02), [pcbEdge, pcbMat]);
   pcb.position.y = 0.006;
   board.add(pcb);
-  // CPU package + die
+  // CPU package
   board.add(box(0.34, 0.014, 0.3, new THREE.MeshStandardMaterial({ color: 0x223328, roughness: 0.6 }), 0.1, 0.019, -0.05));
-  board.add(box(0.2, 0.01, 0.13, alumMat, 0.1, 0.031, -0.05));
-  // chokes + capacitors
-  const chokeMat = new THREE.MeshStandardMaterial({ color: 0x2a2f35, roughness: 0.4, metalness: 0.5 });
-  for (let i = 0; i < 6; i++) board.add(box(0.07, 0.035, 0.07, chokeMat, -0.28 - (i % 3) * 0.1, 0.03, -0.3 + Math.floor(i / 3) * 0.1));
+  // aluminium: CPU die, capacitors, and the I/O blocks on the left edge that line up with
+  // the side ports (the board sits at z = -0.42, so board-local z = world z + 0.42)
   const capGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.04, 12);
-  for (let i = 0; i < 8; i++) {
-    const c = new THREE.Mesh(capGeo, alumMat);
-    c.position.set(0.45 + (i % 4) * 0.06, 0.032, 0.2 + Math.floor(i / 4) * 0.06);
-    board.add(c);
-  }
-  // I/O blocks on the left edge (line up with the side ports)
-  // (board sits at z = -0.42, so board-local z = world z + 0.42)
-  board.add(box(0.2, 0.07, 0.18, alumMat, -1.33, 0.047, 0.08));
-  board.add(box(0.14, 0.03, 0.1, alumMat, -1.35, 0.027, 0.37));
-  board.add(box(0.14, 0.03, 0.1, alumMat, -1.35, 0.027, 0.5));
-  board.add(box(0.14, 0.045, 0.16, alumMat, -1.35, 0.034, -0.2));
+  board.add(new THREE.Mesh(bake([
+    part(0.2, 0.01, 0.13, 0.1, 0.031, -0.05),
+    ...Array.from({ length: 8 }, (_, i) => [capGeo, [0.45 + (i % 4) * 0.06, 0.032, 0.2 + Math.floor(i / 4) * 0.06]]),
+    part(0.2, 0.07, 0.18, -1.33, 0.047, 0.08),
+    part(0.14, 0.03, 0.1, -1.35, 0.027, 0.37),
+    part(0.14, 0.03, 0.1, -1.35, 0.027, 0.5),
+    part(0.14, 0.045, 0.16, -1.35, 0.034, -0.2),
+  ]), alumMat));
+  // chokes
+  const chokeMat = new THREE.MeshStandardMaterial({ color: 0x2a2f35, roughness: 0.4, metalness: 0.5 });
+  const chokeGeo = new THREE.BoxGeometry(0.07, 0.035, 0.07);
+  board.add(new THREE.Mesh(bake(Array.from({ length: 6 }, (_, i) => [chokeGeo, [-0.28 - (i % 3) * 0.1, 0.03, -0.3 + Math.floor(i / 3) * 0.1]])), chokeMat));
   // SO-DIMM slots and M.2 slot
-  board.add(box(0.72, 0.028, 0.05, darkPlastic, -0.62, 0.02, -0.38));
-  board.add(box(0.72, 0.028, 0.05, darkPlastic, -0.62, 0.05, -0.38));
-  board.add(box(0.06, 0.02, 0.24, darkPlastic, 0.62, 0.016, 0.2));
+  board.add(new THREE.Mesh(bake([part(0.72, 0.028, 0.05, -0.62, 0.02, -0.38), part(0.72, 0.028, 0.05, -0.62, 0.05, -0.38), part(0.06, 0.02, 0.24, 0.62, 0.016, 0.2)]), darkPlastic));
   board.position.set(0, DIM.floorH + 0.012, -0.42);
 
   // RAM sticks (stacked SO-DIMMs)
@@ -368,7 +391,7 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   ramTex.anisotropy = maxAniso;
   const ramTop = new THREE.MeshStandardMaterial({ map: ramTex, roughness: 0.5, metalness: 0.1 });
   for (let i = 0; i < 2; i++) {
-    const stick = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.008, 0.3), [pcbEdge, pcbEdge, ramTop, pcbEdge, pcbEdge, pcbEdge]);
+    const stick = new THREE.Mesh(topBox(0.7, 0.008, 0.3), [pcbEdge, ramTop]);
     stick.position.set(0, i * 0.03, 0);
     ram.add(stick);
   }
@@ -381,7 +404,7 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   ssdTexData.anisotropy = ssdTexWiped.anisotropy = maxAniso;
   const ssdTop = new THREE.MeshStandardMaterial({ map: ssdTexData, roughness: 0.45, metalness: 0.1, emissive: new THREE.Color('#e8963a'), emissiveIntensity: 0 });
   const ssdEdge = new THREE.MeshStandardMaterial({ color: 0x10161c, roughness: 0.6, emissive: new THREE.Color('#e8963a'), emissiveIntensity: 0 });
-  const ssdBoard = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.01, 0.22), [ssdEdge, ssdEdge, ssdTop, ssdEdge, ssdEdge, ssdEdge]);
+  const ssdBoard = new THREE.Mesh(topBox(0.8, 0.01, 0.22), [ssdEdge, ssdTop]);
   ssd.add(ssdBoard);
   const ssdScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 12), alumMat);
   ssdScrew.position.set(0.39, 0.006, 0);
@@ -392,8 +415,8 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
 
   // cooling: blower fan + fins + heat pipe
   const fan = new THREE.Group();
-  const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 48, 1, true), darkPlastic);
-  housing.material.side = THREE.DoubleSide;
+  // own double-sided material (making the shared dark plastic double-sided affected every part using it)
+  const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 48, 1, true), new THREE.MeshStandardMaterial({ color: 0x14191f, roughness: 0.55, metalness: 0.1, side: THREE.DoubleSide }));
   fan.add(housing);
   const topPlate = new THREE.Mesh(new THREE.RingGeometry(0.145, 0.3, 48), new THREE.MeshStandardMaterial({ color: 0x1b2229, roughness: 0.5, metalness: 0.3, side: THREE.DoubleSide }));
   topPlate.rotation.x = -Math.PI / 2;
@@ -402,23 +425,14 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   const blades = new THREE.Group();
   const bladeGeo = new THREE.BoxGeometry(0.15, 0.036, 0.008);
   bladeGeo.translate(0.13, 0, 0);
-  for (let i = 0; i < 15; i++) {
-    const b = new THREE.Mesh(bladeGeo, darkPlastic);
-    b.rotation.y = (i / 15) * Math.PI * 2;
-    b.rotation.z = 0.0;
-    blades.add(b);
-  }
+  blades.add(new THREE.Mesh(bake(Array.from({ length: 15 }, (_, i) => [bladeGeo, [0, 0, 0], [0, (i / 15) * Math.PI * 2, 0]])), darkPlastic));
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.04, 24), new THREE.MeshStandardMaterial({ color: 0x2b3440, roughness: 0.35, metalness: 0.6 }));
   blades.add(hub);
   fan.add(blades);
   fan.position.set(0.95, 0.03, -0.52);
   cooling.add(fan);
+  // copper: fins, heat pipe and CPU plate
   const finGeo = new THREE.BoxGeometry(0.006, 0.05, 0.2);
-  for (let i = 0; i < 26; i++) {
-    const f = new THREE.Mesh(finGeo, copperMat);
-    f.position.set(0.66 + i * 0.023, 0.03, -0.9);
-    cooling.add(f);
-  }
   const pipeCurve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(-0.05, 0.03, -0.4),
     new THREE.Vector3(0.25, 0.034, -0.46),
@@ -426,9 +440,11 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
     new THREE.Vector3(0.95, 0.036, -0.86),
     new THREE.Vector3(1.28, 0.036, -0.86),
   ]);
-  cooling.add(new THREE.Mesh(new THREE.TubeGeometry(pipeCurve, 60, 0.024, 12), copperMat));
-  const cpuPlate = box(0.26, 0.012, 0.22, copperMat, 0.1, 0.03, -0.47);
-  cooling.add(cpuPlate);
+  cooling.add(new THREE.Mesh(bake([
+    ...Array.from({ length: 26 }, (_, i) => [finGeo, [0.66 + i * 0.023, 0.03, -0.9]]),
+    [new THREE.TubeGeometry(pipeCurve, 60, 0.024, 12)],
+    part(0.26, 0.012, 0.22, 0.1, 0.03, -0.47),
+  ]), copperMat));
   cooling.position.set(0, DIM.floorH + 0.012, 0);
   anchor('fan', cooling, 0.95, 0.07, -0.52);
 
@@ -438,15 +454,19 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   root.add(topCase);
   topCase.add(new THREE.Mesh(slab(W, D, DIM.topH, r, 0.016), shellMat));
   const T = DIM.topH; // local top surface of the case
+  // everything on the keyboard side: hidden while the lid is shut
+  const topFace = new THREE.Group();
+  topCase.add(topFace);
 
-  // keyboard well
+  // keyboard well + trackpad rim (same material, one mesh)
   const kb = { x0: -1.425, z0: -0.93 };
   const U = 0.19;
   const GAP = 0.034;
   const kbDepth = U * 5.5;
-  const deck = new THREE.Mesh(flatRoundRect(15 * U + 0.07, kbDepth + 0.07, 0.035), deckMat);
-  deck.position.set(0, T + 0.0006, kb.z0 + kbDepth / 2);
-  topCase.add(deck);
+  topFace.add(new THREE.Mesh(bake([
+    [flatRoundRect(15 * U + 0.07, kbDepth + 0.07, 0.035), [0, T + 0.0006, kb.z0 + kbDepth / 2]],
+    [flatRoundRect(1.23, 0.77, 0.05), [0, T + 0.0005, 0.6]],
+  ]), deckMat));
 
   // keys (instanced, one InstancedMesh per cap size)
   const keyRecords = [];
@@ -480,7 +500,7 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
       keyRecords.push({ mesh, i, x: p.x, z: p.z });
     });
     mesh.instanceMatrix.needsUpdate = true;
-    topCase.add(mesh);
+    topFace.add(mesh);
   }
   const legendTex = TX.keyLegendTexture(legends, { x0: kb.x0, z0: kb.z0, w: 15 * U, d: kbDepth }, mobile ? 0.62 : 1);
   legendTex.anisotropy = maxAniso;
@@ -490,23 +510,20 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   );
   legendPlane.rotation.x = -Math.PI / 2;
   legendPlane.position.set(0, keyY + DIM.keyH / 2 + 0.0008, kb.z0 + kbDepth / 2);
-  topCase.add(legendPlane);
+  topFace.add(legendPlane);
   anchor('keys', topCase, 1.25, T + 0.02, -0.5);
 
   // trackpad
-  const padRim = new THREE.Mesh(flatRoundRect(1.23, 0.77, 0.05), deckMat);
-  padRim.position.set(0, T + 0.0005, 0.6);
-  topCase.add(padRim);
   const pad = new THREE.Mesh(flatRoundRect(1.2, 0.74, 0.045), padMat);
   pad.position.set(0, T + 0.0011, 0.6);
-  topCase.add(pad);
+  topFace.add(pad);
   anchor('trackpad', topCase, 0.6, T + 0.01, 0.6);
   anchor('casing', topCase, 1.42, T + 0.005, 0.98);
 
   // palm-rest grime (cleaned in stage 5 along with the lid)
   const palmGrime = new THREE.Mesh(flatRoundRect(W - 0.12, 0.95, 0.13), grimeMaterial(TX.grimeTexture(1024, 320, 44), 0.55));
   palmGrime.position.set(0, T + 0.0016, 0.6);
-  topCase.add(palmGrime);
+  topFace.add(palmGrime);
 
   // hinge barrel
   const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 2.3, 28), darkPlastic);
@@ -526,15 +543,17 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   lidGeo.translate(0, D / 2, -DIM.lidT);
   lid.add(new THREE.Mesh(lidGeo, shellMat));
 
-  // inner face: bezel, display, glass
+  // inner face: bezel, display, glass (hidden while the lid is shut)
+  const screenFace = new THREE.Group();
+  lid.add(screenFace);
   const bezelGeo = new THREE.ShapeGeometry(roundedRectShape(W - 0.05, D - 0.05, r - 0.03), 16);
   const bezel = new THREE.Mesh(bezelGeo, bezelMat);
   bezel.position.set(0, D / 2, 0.0012);
-  lid.add(bezel);
+  screenFace.add(bezel);
   const displayMat = new THREE.MeshBasicMaterial({ map: screen.texture, toneMapped: false });
   const display = new THREE.Mesh(new THREE.PlaneGeometry(DIM.displayW, DIM.displayH), displayMat);
   display.position.set(0, DIM.displayY, 0.0022);
-  lid.add(display);
+  screenFace.add(display);
   const glassMat = new THREE.MeshStandardMaterial({
     color: 0x000000,
     roughness: 0.07,
@@ -547,10 +566,10 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
   // rounded like the bezel: square corners would stick out past the lid's rounded ones
   const glass = new THREE.Mesh(roundPlane(W - 0.07, D - 0.07, r - 0.04), glassMat);
   glass.position.set(0, D / 2, 0.0032);
-  lid.add(glass);
+  screenFace.add(glass);
   const cam = new THREE.Mesh(new THREE.CircleGeometry(0.016, 20), new THREE.MeshStandardMaterial({ color: 0x0d1a26, roughness: 0.1, metalness: 0.4 }));
   cam.position.set(0, D - 0.055, 0.0026);
-  lid.add(cam);
+  screenFace.add(cam);
   const screenCenter = new THREE.Object3D();
   screenCenter.position.set(0, DIM.displayY, 0.0022);
   lid.add(screenCenter);
@@ -718,7 +737,9 @@ export function buildLaptop({ screen, renderer, mobile = false }) {
     // internals are only visible while the case is open
     const open = e > 0.002 || S.ssdOut > 0.002;
     battery.visible = board.visible = ram.visible = cooling.visible = open;
-    ssd.visible = open;
+    ssd.visible = cavity.visible = bosses.visible = open;
+    // keyboard side and screen side can't be seen while the lid is shut
+    topFace.visible = screenFace.visible = S.lid > 0.002 || e > 0.002;
 
     // SSD: exploded position, or lifted out for the wipe close-up
     const sy = ssdHome.y + EXPLODE.ssd.dy * lay('ssd');

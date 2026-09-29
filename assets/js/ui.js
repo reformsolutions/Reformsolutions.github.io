@@ -26,12 +26,16 @@ export function initNav({ lenis }) {
     });
   });
 
-  // Hide on scroll down, reveal on scroll up; solid once past the 3D story
+  // Hide on scroll down, reveal on scroll up; solid once past the 3D story.
+  // Measured on refresh only: reading layout in the scroll handler forced a reflow every frame.
   let lastY = 0;
-  const storyEnd = () => {
-    const s = document.querySelector('.story');
-    return s ? s.offsetTop + s.offsetHeight - window.innerHeight : 0;
+  let solidAt = Infinity;
+  const story = document.querySelector('.story');
+  const measure = () => {
+    solidAt = story ? story.offsetTop + story.offsetHeight - window.innerHeight * 0.1 : 0;
   };
+  measure();
+  ScrollTrigger.addEventListener('refresh', measure);
   const onScroll = (y) => {
     const down = y > lastY + 2;
     const up = y < lastY - 2;
@@ -39,7 +43,7 @@ export function initNav({ lenis }) {
       if (down && y > 160) nav.classList.add('is-hidden');
       else if (up || y < 160) nav.classList.remove('is-hidden');
     }
-    nav.classList.toggle('is-solid', y > storyEnd() + window.innerHeight * 0.9);
+    nav.classList.toggle('is-solid', y > solidAt);
     lastY = y;
   };
   if (lenis) lenis.on('scroll', ({ scroll }) => onScroll(scroll));

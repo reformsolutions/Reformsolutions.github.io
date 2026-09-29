@@ -2,23 +2,40 @@
 // An orange RJ45 plug drags the cable along the bottom as you scroll.
 import { ART } from './iso.js';
 
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const drawEase = gsap.parseEase('power2.inOut');
+const fillEase = gsap.parseEase('power1.out');
+
+// Lines draw in one after another (0.9s spread, 1.5s each) and fill in behind them.
+// One tween drives the whole drawing: a tween per line meant setting up ~170 tweens in a
+// single frame when a card appeared, which stalled the scroll on phones.
 function drawIn(card, reduced) {
   if (card.dataset.drawn) return;
   card.dataset.drawn = '1';
   const svg = card.querySelector('.iso');
   if (!svg) return;
-  const lines = svg.querySelectorAll('polygon, polyline');
+  const lines = [...svg.querySelectorAll('polygon, polyline')];
   if (reduced) {
     gsap.set(lines, { strokeDashoffset: 0, fillOpacity: 1 });
     return;
   }
-  gsap.to(lines, {
-    strokeDashoffset: 0,
-    duration: 1.5,
-    ease: 'power2.inOut',
-    stagger: { amount: 0.9, from: 'start' },
+  const step = 0.9 / Math.max(1, lines.length - 1);
+  const shown = lines.map(() => [-1, -1]);
+  const clock = { t: 0 };
+  gsap.to(clock, {
+    t: 2.4,
+    duration: 2.4,
+    ease: 'none',
+    onUpdate() {
+      lines.forEach((el, i) => {
+        const d = Math.round(drawEase(clamp01((clock.t - i * step) / 1.5)) * 1000) / 1000;
+        const f = Math.round(fillEase(clamp01((clock.t - 0.25 - i * step) / 0.8)) * 1000) / 1000;
+        const s = shown[i];
+        if (d !== s[0]) el.style.strokeDashoffset = String(1 - (s[0] = d));
+        if (f !== s[1]) el.style.fillOpacity = String((s[1] = f));
+      });
+    },
   });
-  gsap.to(lines, { fillOpacity: 1, duration: 0.8, ease: 'power1.out', stagger: { amount: 0.9 }, delay: 0.25 });
 }
 
 export function initEquipment({ reduced }) {

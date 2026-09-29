@@ -340,18 +340,26 @@ em { font-style: italic; }
 .menu a .mono { color: var(--orange); font-size: 0.7rem; }
 
 /* ---------- 3D bench ---------- */
+/* Both sized to the large viewport (address bar hidden): a phone's address bar sliding
+   in and out then doesn't resize the 3D canvas mid-scroll. */
 .bench {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 1;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100lvh;
   pointer-events: none;
 }
 /* faint drafting grid — reads as a workbench mat behind the laptop */
 .bench-grid {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
   z-index: 0;
   pointer-events: none;
   background-image:
@@ -473,13 +481,15 @@ em { font-style: italic; }
   content: "";
   position: absolute;
   left: 0;
-  top: -40%;
+  top: 0;
   width: 1px;
   height: 40%;
   background: var(--orange);
+  /* transform, not top: runs on the compositor instead of re-laying out the page every frame */
+  transform: translateY(-100%);
   animation: cue 2.2s var(--ease-in-out) infinite;
 }
-@keyframes cue { to { top: 100%; } }
+@keyframes cue { to { transform: translateY(250%); } }
 .hero__cats { display: flex; gap: 22px; color: var(--ink-mute); font-size: 0.68rem; }
 
 /* ---------- Process (fixed UI over the 3D story) ---------- */
@@ -607,6 +617,9 @@ em { font-style: italic; }
 .has-story .dark-chapter > :not(.handoff) { background: var(--night); pointer-events: auto; }
 /* room for ascenders and descenders inside the heading's line masks */
 .handoff__line-mask { padding-block: 0.2em; margin-block: -0.2em; }
+/* own layers while the story drives them: otherwise every frame of the reveal repaints the
+   whole page (this long page takes a phone tens of milliseconds to repaint) */
+.has-story .handoff__line, .has-story .handoff .eyebrow { will-change: transform, opacity; }
 
 .equipment { position: relative; }
 .equipment__pin {
@@ -1197,7 +1210,8 @@ em { font-style: italic; }
 
   .equipment__pin { height: auto; display: block; overflow: visible; padding: 40px 0 90px; }
   .equipment__word, .equipment__cable { display: none; }
-  .equipment__track { flex-direction: column; padding-inline: var(--gutter); gap: 56px; transform: none !important; }
+  /* no sideways track on phones, so no giant compositor layer either */
+  .equipment__track { flex-direction: column; padding-inline: var(--gutter); gap: 56px; transform: none !important; will-change: auto; }
   .eq-intro, .eq-card, .eq-end { flex: none; width: 100%; padding: 0; }
   .eq-card { padding-top: 18px; }
   .eq-card__art { max-width: 420px; }

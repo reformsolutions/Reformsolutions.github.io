@@ -103,15 +103,20 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
   // ---- sizing: pixel budget + adaptive resolution ----
   let W = 1, H = 1;
   const quality = { scale: 1, slow: 0, fast: 0, cooldown: 90 };
-  const budget = mobile ? 2.2e6 : 4.2e6; // max rendered pixels per frame
+  const budget = mobile ? 1.4e6 : 4.2e6; // max rendered pixels per frame
   function pixelRatio() {
     const dpr = window.devicePixelRatio || 1;
-    const cap = Math.min(dpr, mobile ? 1.75 : 2, Math.sqrt(budget / Math.max(1, W * H)));
+    const cap = Math.min(dpr, mobile ? 1.5 : 2, Math.sqrt(budget / Math.max(1, W * H)));
     return Math.max(0.75, cap * quality.scale);
   }
+  // Sized from the canvas box, which CSS keeps at the large viewport height, so a phone's
+  // address bar sliding in and out doesn't resize (and re-frame) the 3D on every scroll.
   function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
+    const w = canvas.clientWidth || window.innerWidth;
+    const h = canvas.clientHeight || window.innerHeight;
+    if (w === W && h === H) return;
+    W = w;
+    H = h;
     renderer.setPixelRatio(pixelRatio());
     renderer.setSize(W, H, false);
     camera.aspect = W / H;
@@ -240,6 +245,19 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     if (state.post > 0) return { mode: 'post', p: state.post };
     return { mode: 'off', p: 0 };
   }
+  // Each screen redraw is a canvas repaint plus a texture upload, so phones do it at most
+  // ~30 times a second; a change skipped here is picked up on a following frame.
+  let screenAt = 0;
+  let screenPending = false;
+  function updateScreen() {
+    const now = performance.now();
+    if (mobile && screen.key && now - screenAt < 30) {
+      screenPending = true;
+      return;
+    }
+    screenPending = false;
+    if (screen.update(screenState())) screenAt = now;
+  }
 
   function frame(dt) {
     time += dt;
@@ -251,7 +269,7 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     laptop.root.position.set(S.px, S.py, S.pz);
     laptop.root.rotation.set(S.rx, S.ry, S.rz);
     laptop.apply(S, dt);
-    screen.update(screenState());
+    updateScreen();
     laptop.root.updateMatrixWorld(true);
 
     // 2. the tuned camera for this moment of the story
@@ -379,7 +397,7 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     pointer.x = mix(pointer.x, pointer.tx, 0.05);
     pointer.y = mix(pointer.y, pointer.ty, 0.05);
     const sig = signature();
-    const changed = sig !== lastSig || forceRender || frameSettling();
+    const changed = sig !== lastSig || forceRender || frameSettling() || screenPending;
     const animated = (!reduced && state.bob > 0.001) || state.fan > 0.001;
     if (!changed && (!animated || ++idleTick % 2)) {
       renderedLast = false;
@@ -400,12 +418,19 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
   // Upload every texture and compile every shader (including parts that are
   // hidden until later in the story) so nothing stalls mid-scroll.
   async function warm() {
-    const hidden = [];
+    // show every part (returns the ones that were hidden, to hide again afterwards)
+    const showAll = () => {
+      const hidden = [];
+      scene.traverse((o) => {
+        if (!o.visible) {
+          hidden.push(o);
+          o.visible = true;
+        }
+      });
+      return hidden;
+    };
+    let hidden = showAll();
     scene.traverse((o) => {
-      if (!o.visible) {
-        hidden.push(o);
-        o.visible = true;
-      }
       const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
       for (const m of mats) for (const k of ['map', 'alphaMap']) if (m[k]) renderer.initTexture(m[k]);
       if (o.material?.uniforms?.map?.value) renderer.initTexture(o.material.uniforms.map.value);
@@ -416,6 +441,21 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     } catch {
       renderer.compile(scene, camera);
     }
+    // One draw of everything (no culling) also uploads every vertex buffer and settles the
+    // GPU state for each part, so parts that first appear mid-story (keyboard, screen,
+    // internals) don't stall the scroll. Show all again first: the render loop keeps running
+    // while shaders compile and will have hidden whatever the current story state hides.
+    hidden.forEach((o) => (o.visible = false));
+    hidden = showAll();
+    const culled = [];
+    scene.traverse((o) => {
+      if (o.frustumCulled) {
+        culled.push(o);
+        o.frustumCulled = false;
+      }
+    });
+    renderer.render(scene, camera);
+    culled.forEach((o) => (o.frustumCulled = true));
     hidden.forEach((o) => (o.visible = false));
     forceRender = true;
     frame(0);

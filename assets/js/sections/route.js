@@ -132,28 +132,36 @@ export function initRoute({ reduced, isMobile }) {
     render();
   }
 
-  function placePlug(g, path, L, t, show) {
-    if (!show) {
-      g.style.opacity = '0';
-      return;
-    }
+  // Where a plug sits at progress t along its cable (reads path geometry only).
+  function plugAt(path, L, t) {
     const at = Math.max(0.001, Math.min(L, L * t));
     const p = path.getPointAtLength(at);
     const back = path.getPointAtLength(Math.max(0, at - 2));
     const ang = (Math.atan2(p.y - back.y, p.x - back.x) * 180) / Math.PI;
-    g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${ang.toFixed(1)}) translate(26 0)`);
-    g.style.opacity = '1';
+    return `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${ang.toFixed(1)}) translate(26 0)`;
+  }
+
+  function placePlug(g, transform) {
+    g.style.opacity = transform ? '1' : '0';
+    if (transform) g.setAttribute('transform', transform);
   }
 
   function render() {
     const tt = smooth(0, 0.62, progress);
     const tb = smooth(0.6, 1, progress);
+    // all geometry reads before any style writes: interleaving them forced a style
+    // recalculation for every plug, every frame
+    const at = {
+      trunk: tt > 0.002 && tb <= 0.002 ? plugAt(cable.trunk, len.trunk, tt) : '',
+      a: tb > 0.002 ? plugAt(cable.a, len.a, tb) : '',
+      b: tb > 0.002 ? plugAt(cable.b, len.b, tb) : '',
+    };
     cable.trunk.style.strokeDashoffset = `${len.trunk * (1 - tt)}`;
     cable.a.style.strokeDashoffset = `${len.a * (1 - tb)}`;
     cable.b.style.strokeDashoffset = `${len.b * (1 - tb)}`;
-    placePlug(plug.trunk, cable.trunk, len.trunk, tt, tt > 0.002 && tb <= 0.002);
-    placePlug(plug.a, cable.a, len.a, tb, tb > 0.002);
-    placePlug(plug.b, cable.b, len.b, tb, tb > 0.002);
+    placePlug(plug.trunk, at.trunk);
+    placePlug(plug.a, at.a);
+    placePlug(plug.b, at.b);
     nodeAt.forEach((n, i) => {
       const reached = (n.k === 'trunk' ? tt : tb) >= n.t - 0.01 && (n.k === 'trunk' ? tt : tb) > 0.001;
       nodeEls[i]?.classList.toggle('is-on', reached);
