@@ -1,7 +1,7 @@
 // Footer: the RS monogram as particles. They start as scattered debris and gather into the
-// logo when the footer comes into view: over a couple of seconds with a mouse, or in step with
-// the scroll on touch screens (so it builds, and unbuilds, under your finger). The cursor pushes
-// them apart; on touch, a tap scatters the ones around it and a sideways drag sweeps through them.
+// logo once, over a couple of seconds, when the footer comes into view (on touch screens once
+// half of it is on screen, so the build is seen), then stay formed. The cursor pushes them
+// apart; on touch, a tap scatters the ones around it and a sideways drag sweeps through them.
 // The loop sleeps once everything has settled and wakes on pointer movement.
 import { MARK } from '../brand-paths.js';
 
@@ -24,6 +24,7 @@ export function initParticles({ reduced }) {
   let raf = 0;
   let last = 0;
   let still = 0;
+  let settled = false; // formed and at rest: nothing to redraw until something disturbs it
   const pointer = { x: -9999, y: -9999, active: false, down: false };
 
   function sample() {
@@ -98,8 +99,7 @@ export function initParticles({ reduced }) {
   }
 
   // Each particle springs toward a goal that travels from its debris spot to its place in the
-  // logo as `form` goes 0 → 1, so the build can run either way. Frame-rate independent;
-  // returns the fastest particle speed.
+  // logo as `form` goes 0 → 1. Frame-rate independent; returns the fastest particle speed.
   function step(f) {
     const t = performance.now() * 0.001;
     const k = 0.038 * f;
@@ -172,11 +172,15 @@ export function initParticles({ reduced }) {
     draw();
     // sleep once the logo has formed and nothing is disturbing it
     still = form > 0.999 && !pointer.active && vmax < 0.02 ? still + 1 : 0;
-    if (still > 20) return;
+    if (still > 20) {
+      settled = true;
+      return;
+    }
     raf = requestAnimationFrame(loop);
   }
 
   function wake() {
+    settled = false;
     if (raf || !visible || reduced) return;
     last = 0;
     still = 0;
@@ -195,11 +199,12 @@ export function initParticles({ reduced }) {
 
   if (reduced) return;
   let started = false;
+  const startAt = touch ? 0.5 : 0.15;
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
     if (!visible) return;
-    // with a mouse, the logo builds itself once enough of it is in view
-    if (!touch && !started && e.intersectionRatio >= 0.15) {
+    // the logo builds itself once, as soon as enough of it is in view
+    if (!started && e.intersectionRatio >= startAt) {
       started = true;
       gsap.to({ v: form }, {
         v: 1,
@@ -210,21 +215,9 @@ export function initParticles({ reduced }) {
         },
       });
     }
-    wake();
-  }, { threshold: [0, 0.15] }).observe(canvas);
-
-  // on touch screens it builds with the scroll: from entering the screen to its middle
-  if (touch) {
-    ScrollTrigger.create({
-      trigger: canvas,
-      start: 'top bottom',
-      end: 'clamp(center 55%)',
-      onUpdate: (self) => {
-        form = self.progress;
-        wake();
-      },
-    });
-  }
+    // coming back into view once it has settled needs no redraw: the canvas still shows it
+    if (!settled) wake();
+  }, { threshold: [0, startAt] }).observe(canvas);
 
   const locate = (e) => {
     const r = canvas.getBoundingClientRect();

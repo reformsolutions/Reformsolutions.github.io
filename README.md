@@ -11,7 +11,7 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
 | Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; for now it hands off to the visitor's email app (see Enquiry form below). |
-| Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. On touch screens the logo builds (and unbuilds) with the scroll, a tap scatters the particles around the finger, and a sideways drag sweeps through them. |
+| Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once and then stays formed (on touch screens once half of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
 
 ## Run it locally
 
@@ -59,8 +59,11 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
   milliseconds. Don't read layout (`offsetTop`, `getBoundingClientRect`…) in scroll handlers, don't
   animate layout properties like `top` in CSS, and give elements that the story animates inside the
   normal page flow `will-change` so each frame doesn't repaint everything.
-- On phones the business route's cable is drawn from points sampled once per layout, on its own narrow
-  layer, so scrolling never reads SVG geometry or repaints the text beside it.
+- On phones the business route's cable and plugs move as scroll-driven animations (`ScrollTimeline`),
+  which the browser runs on the same thread as its own scrolling. Drawn from JavaScript on each scroll,
+  they trailed the page by a frame or more and the plug wobbled against it. Browsers without
+  `ScrollTimeline` get the same drawing from scroll updates. Keep scroll-linked motion of anything that
+  scrolls with the page off the main thread like this (or use `position: sticky`).
 - The footer particles stop animating once the logo has formed.
 - The full logo preloader plays once per visit; later page loads get a short fade.
 

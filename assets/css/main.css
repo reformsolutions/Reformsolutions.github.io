@@ -1217,10 +1217,15 @@ em { font-style: italic; }
   .eq-card__art { max-width: 420px; }
 
   .business__head { grid-template-columns: 1fr; row-gap: 20px; }
-  /* phones: the steps stack and the cable (route.js) runs down their left side; the cable
-     layer is kept narrow and on its own layer, so drawing it doesn't repaint the text */
+  /* phones: the steps stack and the cable (route.js) runs down their left side. The drawn cable
+     and the plugs are separate layers moved with the scroll; the SVG keeps the dotted path */
   .route { flex: none; min-height: 0; margin-top: 40px; padding-top: 28px; }
-  .route__svg { right: auto; width: calc(var(--gutter) + 84px); will-change: transform; }
+  .route__svg { right: auto; width: calc(var(--gutter) + 84px); }
+  .route--tall .route__svg .route__cable, .route--tall .route__svg .route__plug { display: none; }
+  .route__draw { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; transform: translateY(-100%); }
+  .route__draw-in { transform: translateY(100%); }
+  .route__drawn { display: block; overflow: visible; }
+  .route__pl { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; color: var(--orange); pointer-events: none; transform-origin: 0 0; opacity: 0; }
   .route__steps { position: relative; inset: auto; display: grid; row-gap: 26px; padding-left: 84px; }
   .route__step { position: relative; width: auto; will-change: opacity; }
   .route__step:not(.route__step--end) + .route__step--end { margin-top: 34px; } /* room for the fork */

@@ -26,6 +26,7 @@ function pathThrough(pts, prev) {
 // The plug sits this far past the cable's end, so a boot as wide as the cable covers the end.
 const PLUG_AHEAD = 43;
 const PLUG_REACH = PLUG_AHEAD + 35; // cable end → tip of the plug
+const NS = 'http://www.w3.org/2000/svg';
 
 // Points along a path, sampled once per layout, for looking up a plug position by depth (y)
 // without reading SVG geometry while scrolling. Phone paths only ever run downwards.
@@ -56,6 +57,7 @@ function atDepth(pts, y) {
   const f = Math.max(0, Math.min(1, (y - a[2]) / (b[2] - a[2] || 1)));
   return { s: a[0] + (b[0] - a[0]) * f, x: a[1] + (b[1] - a[1]) * f, y: a[2] + (b[2] - a[2]) * f, ang: Math.atan2(b[2] - a[2], b[1] - a[1]) };
 }
+const pose = (p) => `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) rotate(${((p.ang * 180) / Math.PI).toFixed(1)}deg)`;
 
 export function initRoute({ reduced, isMobile }) {
   const section = document.querySelector('.business');
@@ -71,19 +73,50 @@ export function initRoute({ reduced, isMobile }) {
   const steps = [...route.querySelectorAll('.route__step')];
   const portrait = isMobile(); // the page reloads if this flips
 
+  // Phones: a copy of the finished cable (with its lit nodes) is uncovered from the top down and
+  // the plugs ride its leading edge. Where the browser supports it, both are scroll-driven
+  // animations, which it runs on the same thread as its own scrolling: drawn from JavaScript on
+  // every scroll they trail the page by a frame or more, so the plug wobbles against it.
+  const scrollDriven = portrait && typeof ScrollTimeline !== 'undefined';
+  let tall = null;
+  if (portrait) {
+    route.classList.add('route--tall');
+    const outer = document.createElement('div');
+    outer.className = 'route__draw';
+    outer.setAttribute('aria-hidden', 'true');
+    const inner = document.createElement('div');
+    inner.className = 'route__draw-in';
+    const drawn = document.createElementNS(NS, 'svg');
+    drawn.setAttribute('class', 'route__drawn');
+    inner.append(drawn);
+    outer.append(inner);
+    const plugs = {};
+    for (const k of ['trunk', 'a', 'b']) {
+      plugs[k] = document.createElementNS(NS, 'svg');
+      plugs[k].setAttribute('class', 'route__pl');
+      plugs[k].setAttribute('aria-hidden', 'true');
+      plugs[k].innerHTML = `<g transform="translate(${PLUG_AHEAD} 0)"><use href="#rj45" x="-36" y="-16" width="72" height="32"/><path class="route__boot" fill="currentColor"/></g>`;
+    }
+    svg.after(outer, plugs.trunk, plugs.a, plugs.b);
+    tall = { outer, inner, drawn, plugs, h: 1, anims: [] };
+  }
+
   // a boot on each plug, as wide as the cable, tapering into the plug's ribs
-  const boots = Object.values(plug).map((g) => {
-    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    p.setAttribute('class', 'route__boot');
-    p.setAttribute('fill', 'currentColor');
-    g.appendChild(p);
-    return p;
-  });
+  const boots = portrait
+    ? [...route.querySelectorAll('.route__pl .route__boot')]
+    : Object.values(plug).map((g) => {
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('class', 'route__boot');
+      p.setAttribute('fill', 'currentColor');
+      g.appendChild(p);
+      return p;
+    });
 
   let len = { trunk: 1, a: 1, b: 1 };
   let nodeAt = []; // wide: [{ k, t }] progress along its path at which each node is reached
   let nodeEls = [];
   let progress = 0;
+  let trigger = null;
   // phones: depth (y) of each node, the fork and the cable ends, plus sampled paths
   let nodeY = [];
   let forkY = 0;
@@ -134,14 +167,35 @@ export function initRoute({ reduced, isMobile }) {
     }
 
     const prev = trunk[trunk.length - 2];
+    const d = {};
     for (const [k, pts, pv] of [['trunk', trunk], ['a', a, prev], ['b', b, prev]]) {
-      const d = pathThrough(pts, pv);
-      cable[k].setAttribute('d', d);
-      ghost[k].setAttribute('d', d);
-      len[k] = cable[k].getTotalLength();
-      cable[k].style.strokeDasharray = `${len[k]} ${len[k] + 40}`;
+      d[k] = pathThrough(pts, pv);
+      cable[k].setAttribute('d', d[k]);
+      ghost[k].setAttribute('d', d[k]);
     }
-    if (portrait) lut = { trunk: sampleByY(cable.trunk, len.trunk), a: sampleByY(cable.a, len.a), b: sampleByY(cable.b, len.b) };
+    if (portrait) {
+      // the finished cable and its lit nodes, uncovered as it's drawn
+      tall.h = h;
+      tall.outer.style.width = `${w}px`;
+      tall.outer.style.height = `${h}px`;
+      tall.drawn.setAttribute('viewBox', `0 0 ${w.toFixed(1)} ${h.toFixed(1)}`);
+      tall.drawn.setAttribute('width', w.toFixed(1));
+      tall.drawn.setAttribute('height', h.toFixed(1));
+      tall.drawn.innerHTML =
+        ['trunk', 'a', 'b'].map((k) => `<path class="route__cable" d="${d[k]}"/>`).join('') +
+        nodes.map(([x, y]) => `<circle class="route__node is-on" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6"/>`).join('');
+      const paths = tall.drawn.querySelectorAll('path');
+      lut = {};
+      ['trunk', 'a', 'b'].forEach((k, i) => {
+        len[k] = paths[i].getTotalLength();
+        lut[k] = sampleByY(paths[i], len[k]);
+      });
+    } else {
+      for (const k of ['trunk', 'a', 'b']) {
+        len[k] = cable[k].getTotalLength();
+        cable[k].style.strokeDasharray = `${len[k]} ${len[k] + 40}`;
+      }
+    }
 
     const c = (parseFloat(getComputedStyle(cable.trunk).strokeWidth) || 16) + 3;
     const bootD = `M${-PLUG_AHEAD - 1},${-c / 2}L-28,-5V5L${-PLUG_AHEAD - 1},${c / 2}Z`;
@@ -149,7 +203,7 @@ export function initRoute({ reduced, isMobile }) {
 
     nodesG.innerHTML = '';
     nodeEls = nodes.map(([x, y]) => {
-      const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      const el = document.createElementNS(NS, 'circle');
       el.setAttribute('class', 'route__node');
       el.setAttribute('cx', x.toFixed(1));
       el.setAttribute('cy', y.toFixed(1));
@@ -242,27 +296,71 @@ export function initRoute({ reduced, isMobile }) {
     });
   }
 
-  // Phones: one depth for every cable end, so the plugs move at the same steady pace as the page.
+  // Phones, where scroll-driven animations aren't available: uncover the cable and move the plugs
+  // to depth y from here instead.
+  function paintTall(y) {
+    const { outer, inner, plugs, h } = tall;
+    outer.style.transform = `translateY(${(y - h).toFixed(1)}px)`;
+    inner.style.transform = `translateY(${(h - y).toFixed(1)}px)`;
+    const split = y > forkY + 0.5;
+    const show = (el, p) => {
+      el.style.opacity = p ? '1' : '0';
+      if (p) el.style.transform = pose(p);
+    };
+    show(plugs.trunk, y > 0.5 && !split ? { ...atDepth(lut.trunk, y), ang: Math.PI / 2 } : null);
+    show(plugs.a, split ? atDepth(lut.a, y) : null);
+    show(plugs.b, split ? atDepth(lut.b, y) : null);
+  }
+
+  // Phones: the same uncovering and plug moves as animations on the page's scroll position,
+  // over the trigger's range. Rebuilt whenever the layout is measured again.
+  function animateTall() {
+    if (!scrollDriven || !lut || !trigger || !(trigger.end > trigger.start)) return;
+    tall.anims.forEach((an) => an.cancel());
+    tall.anims = [];
+    const opts = { timeline: new ScrollTimeline({ source: document.documentElement }), rangeStart: `${trigger.start}px`, rangeEnd: `${trigger.end}px`, fill: 'both' };
+    const run = (el, frames) => tall.anims.push(el.animate(frames, opts));
+    const { outer, inner, plugs, h } = tall;
+    run(outer, [{ transform: `translateY(${-h}px)` }, { transform: `translateY(${endY - h}px)` }]);
+    run(inner, [{ transform: `translateY(${h}px)` }, { transform: `translateY(${h - endY}px)` }]);
+    const fp = forkY / endY; // progress at the fork
+    const hair = 0.6 / endY;
+    const down = (p) => ({ ...p, ang: Math.PI / 2 });
+    run(plugs.trunk, [
+      { offset: 0, transform: pose(down(atDepth(lut.trunk, 0))) },
+      { offset: fp, transform: pose(down(atDepth(lut.trunk, forkY))) },
+      { offset: 1, transform: pose(down(atDepth(lut.trunk, forkY))) },
+    ]);
+    run(plugs.trunk, [{ offset: 0, opacity: 0 }, { offset: hair, opacity: 1 }, { offset: fp, opacity: 1 }, { offset: Math.min(1, fp + hair), opacity: 0 }, { offset: 1, opacity: 0 }]);
+    for (const k of ['a', 'b']) {
+      // every few px down the branch, so the plug follows its curve
+      const frames = [{ offset: 0, transform: pose(atDepth(lut[k], forkY)) }];
+      const n = Math.max(2, Math.ceil((endY - forkY) / 6));
+      for (let i = 0; i <= n; i++) {
+        const y = forkY + ((endY - forkY) * i) / n;
+        frames.push({ offset: Math.min(1, y / endY), transform: pose(atDepth(lut[k], y)) });
+      }
+      run(plugs[k], frames);
+      run(plugs[k], [{ offset: 0, opacity: 0 }, { offset: fp, opacity: 0 }, { offset: Math.min(1, fp + hair), opacity: 1 }, { offset: 1, opacity: 1 }]);
+    }
+  }
+
+  // Phones: the steps light up as the cable reaches them (and the plugs, without scroll-driven
+  // animations, are moved from here).
   function renderTall() {
     if (!lut) return;
     const y = progress * endY;
-    const t = atDepth(lut.trunk, Math.min(y, forkY));
-    const split = y > forkY + 0.5;
-    const pa = split ? atDepth(lut.a, y) : null;
-    const pb = split ? atDepth(lut.b, y) : null;
-    cable.trunk.style.strokeDashoffset = dash(len.trunk, y > 0.5 ? t.s : 0);
-    cable.a.style.strokeDashoffset = dash(len.a, pa ? pa.s : 0);
-    cable.b.style.strokeDashoffset = dash(len.b, pb ? pb.s : 0);
-    placePlug(plug.trunk, y > 0.5 && !split ? plugTransform(t.x, t.y, Math.PI / 2) : '');
-    placePlug(plug.a, pa ? plugTransform(pa.x, pa.y, pa.ang) : '');
-    placePlug(plug.b, pb ? plugTransform(pb.x, pb.y, pb.ang) : '');
-    nodeY.forEach((ny, i) => setLit(i, y > 0.5 && y >= ny - 1));
+    if (!scrollDriven) paintTall(y);
+    nodeY.forEach((ny, i) => steps[i]?.classList.toggle('is-on', y > 0.5 && y >= ny - 1));
   }
 
   const render = portrait ? renderTall : renderWide;
 
   layout();
-  ScrollTrigger.addEventListener('refresh', layout);
+  ScrollTrigger.addEventListener('refresh', () => {
+    layout();
+    animateTall();
+  });
 
   const onUpdate = (self) => {
     if (self.progress === progress) return;
@@ -270,10 +368,11 @@ export function initRoute({ reduced, isMobile }) {
     render();
   };
   if (!portrait) {
-    ScrollTrigger.create({ trigger: section, start: 'top top', end: '+=140%', pin: pinEl, scrub: reduced ? true : 0.8, onUpdate });
+    trigger = ScrollTrigger.create({ trigger: section, start: 'top top', end: '+=140%', pin: pinEl, scrub: reduced ? true : 0.8, onUpdate });
   } else {
     // starts as the route's top passes 60% down the screen and ends with its bottom 82% down, so the
     // plug drifts gently from about 70% to 82% and never reaches a bottom toolbar
-    ScrollTrigger.create({ trigger: route, start: 'top 60%', end: 'bottom 82%', onUpdate });
+    trigger = ScrollTrigger.create({ trigger: route, start: 'top 60%', end: 'bottom 82%', onUpdate });
+    animateTall();
   }
 }
