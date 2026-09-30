@@ -50,6 +50,10 @@
   --nav-h: 76px;
   --unit: 85vh;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* the fixed WhatsApp button (bottom right): its offset from the edges and width */
+  --wa-x: calc(clamp(16px, 2vw, 28px) + env(safe-area-inset-right, 0px));
+  --wa-y: calc(clamp(14px, 2vw, 24px) + env(safe-area-inset-bottom, 0px));
+  --wa-w: 206px;
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 @supports (height: 1svh) {
@@ -555,7 +559,7 @@ em { font-style: italic; }
   position: absolute;
   /* aligned with the centred content column on very wide screens */
   left: max(var(--gutter), calc((100% - var(--maxw)) / 2 + var(--gutter)));
-  right: max(var(--gutter), calc((100% - var(--maxw)) / 2 + var(--gutter)));
+  right: max(var(--gutter), calc((100% - var(--maxw)) / 2 + var(--gutter)), calc(var(--wa-x) + var(--wa-w) + 20px)); /* clear of the WhatsApp button */
   bottom: 22px;
   pointer-events: auto;
 }
@@ -1148,6 +1152,36 @@ em { font-style: italic; }
 .footer__top { display: inline-flex; align-items: center; gap: 8px; }
 .footer__top svg { width: 14px; height: 14px; transform: rotate(-90deg); }
 
+/* ---------- Chat on WhatsApp (fixed, bottom right) ---------- */
+/* WhatsApp green, with the site's ink for the logo and label: white on this green is too faint to read */
+.wa {
+  position: fixed;
+  right: var(--wa-x);
+  bottom: var(--wa-y);
+  z-index: 40; /* over the page, under the nav and the open menu */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 20px 0 13px;
+  border-radius: 999px;
+  background: #25d366;
+  color: var(--night);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 14px 30px -16px rgba(7, 44, 30, 0.6), 0 2px 8px rgba(27, 43, 59, 0.14);
+  transition: transform 0.5s var(--ease-out), opacity 0.5s var(--ease-out), box-shadow 0.3s;
+}
+.wa:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -16px rgba(7, 44, 30, 0.7), 0 3px 10px rgba(27, 43, 59, 0.16); }
+.wa__icon { width: 26px; height: 26px; flex: none; }
+/* comes in once the preloader has gone (main.js) */
+.js .wa:not(.is-in) { opacity: 0; transform: translateY(16px); pointer-events: none; }
+/* room for it at the right of the hero's footer line and the footer's last line */
+.hero__foot, .footer__base { padding-right: max(var(--gutter), calc(var(--wa-x) + var(--wa-w) + 24px)); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .nav__links { display: none; }
@@ -1203,6 +1237,10 @@ em { font-style: italic; }
   .grades dt { font-size: 1.35rem; }
   .grades dd { font-size: 0.86rem; }
   .rail { bottom: 14px; }
+  :root { --wa-w: 50px; }
+  .wa { width: 50px; height: 50px; padding: 0; justify-content: center; }
+  .wa__icon { width: 27px; height: 27px; }
+  .wa__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); }
   .rail button { font-size: 0; gap: 0; justify-content: center; padding: 10px 0; }
   .rail button span { font-size: 0.6rem; }
 

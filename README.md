@@ -11,6 +11,7 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
 | Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; for now it hands off to the visitor's email app (see Enquiry form below). |
+| WhatsApp | A "Chat on WhatsApp" button stays in the bottom-right corner (a round logo on phones) and opens a chat with +91 866 814 5793. The story's stage rail and the hero and footer bottom lines leave room for it (`--wa-w` in `main.css`). |
 | Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once and then stays formed (on touch screens once half of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
 
 ## Run it locally
@@ -69,7 +70,7 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 ## Things to fill in before launch
 
-- **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone number is still the placeholder `+00 00000 00000` in the contact section and footer.
+- **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone and WhatsApp number is `+91 866 814 5793`: in the contact section and footer (`tel:` links), and in the WhatsApp button's link at the end of `index.html` (`wa.me/918668145793`, whose `text=` sets the chat's opening message).
 - **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
 - **Demo data:** the numbers on the laptop's screen and callouts (91% battery, 77/77 keys, and so on) are illustrative sample readings for the demo unit "Serial No. 2231", not company statistics. (Avoid an "RS-" prefix for IDs: in India it reads as a rupee price.)

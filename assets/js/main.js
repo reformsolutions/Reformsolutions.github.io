@@ -103,6 +103,7 @@ async function boot() {
   if (warming) await Promise.race([warming.catch(() => {}), wait(1500)]);
   pre.progress(1);
   await pre.finish();
+  document.querySelector('.wa')?.classList.add('is-in'); // the WhatsApp button comes in with the page
 
   lenis?.start();
   heroIntro({ bench, reduced });
@@ -123,4 +124,5 @@ boot().catch((err) => {
   console.error(err);
   root.classList.add('js-ready', 'no-webgl');
   document.querySelector('.preloader')?.remove();
+  document.querySelector('.wa')?.classList.add('is-in');
 });
