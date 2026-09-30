@@ -1,7 +1,12 @@
-// Footer: the RS monogram as particles. They start as scattered debris and
-// re-form into the logo when the footer scrolls in; the cursor pushes them apart.
+// Footer: the RS monogram as particles. They start as scattered debris and gather into the
+// logo when the footer comes into view: over a couple of seconds with a mouse, or in step with
+// the scroll on touch screens (so it builds, and unbuilds, under your finger). The cursor pushes
+// them apart; on touch, a tap scatters the ones around it and a sideways drag sweeps through them.
 // The loop sleeps once everything has settled and wakes on pointer movement.
 import { MARK } from '../brand-paths.js';
+
+const STAGGER = 0.4; // particles set off at different moments across the first 40% of the build
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 export function initParticles({ reduced }) {
   const canvas = document.querySelector('.footer__particles');
@@ -10,6 +15,7 @@ export function initParticles({ reduced }) {
   const navy = new Path2D(MARK.navy);
   const orange = new Path2D(MARK.orange);
   const ratio = MARK.width / MARK.height;
+  const touch = window.matchMedia('(pointer: coarse)').matches;
 
   let W = 0, H = 0, dpr = 1;
   let parts = [];
@@ -18,7 +24,7 @@ export function initParticles({ reduced }) {
   let raf = 0;
   let last = 0;
   let still = 0;
-  const mouse = { x: -9999, y: -9999, active: false };
+  const pointer = { x: -9999, y: -9999, active: false, down: false };
 
   function sample() {
     const rect = canvas.getBoundingClientRect();
@@ -56,13 +62,23 @@ export function initParticles({ reduced }) {
         const i = (y * off.width + x) * 4;
         if (data[i + 3] < 128) continue;
         const old = prev[n++];
+        const tx = x + (Math.random() - 0.5) * 0.8;
+        const ty = y + (Math.random() - 0.5) * 0.8;
+        // debris lies scattered over the lower part of the space
+        const hx = Math.random() * W;
+        const hy = H * 0.4 + Math.random() * H * 0.6;
         next.push({
-          tx: x + (Math.random() - 0.5) * 0.8,
-          ty: y + (Math.random() - 0.5) * 0.8,
-          x: old ? old.x : Math.random() * W,
-          y: old ? old.y : H * 0.4 + Math.random() * H * 0.6,
+          tx,
+          ty,
+          hx,
+          hy,
+          inv: 1 / (Math.hypot(tx - hx, ty - hy) || 1),
+          x: old ? old.x : hx,
+          y: old ? old.y : hy,
           vx: 0,
           vy: 0,
+          d: Math.random() * STAGGER,
+          bow: (Math.random() - 0.5) * 40, // how far its path curves off the straight line
           o: data[i] > data[i + 2],
           s: gap * 0.42 + Math.random() * gap * 0.25,
           seed: Math.random() * 1000,
@@ -81,19 +97,32 @@ export function initParticles({ reduced }) {
     wake();
   }
 
-  // Frame-rate independent spring + drift; returns the fastest particle speed.
+  // Each particle springs toward a goal that travels from its debris spot to its place in the
+  // logo as `form` goes 0 → 1, so the build can run either way. Frame-rate independent;
+  // returns the fastest particle speed.
   function step(f) {
     const t = performance.now() * 0.001;
-    const k = (0.008 + form * 0.03) * f;
+    const k = 0.038 * f;
     const damp = Math.pow(0.86, f);
     const R = Math.max(60, H * 0.28);
     let vmax = 0;
     for (const p of parts) {
-      p.vx += (p.tx - p.x) * k * form + Math.sin(t * 0.7 + p.seed) * 0.03 * (1 - form) * f;
-      p.vy += (p.ty - p.y) * k * form + Math.cos(t * 0.6 + p.seed) * 0.03 * (1 - form) * f;
-      if (mouse.active) {
-        const mx = p.x - mouse.x;
-        const my = p.y - mouse.y;
+      const e = ease(Math.min(1, Math.max(0, (form - p.d) / (1 - STAGGER))));
+      const dx = p.tx - p.hx;
+      const dy = p.ty - p.hy;
+      const bow = Math.sin(Math.PI * e) * p.bow;
+      let gx = p.hx + dx * e - dy * p.inv * bow;
+      let gy = p.hy + dy * e + dx * p.inv * bow;
+      if (e < 1) {
+        // loose debris drifts
+        gx += Math.sin(t * 0.7 + p.seed) * 5 * (1 - e);
+        gy += Math.cos(t * 0.6 + p.seed) * 5 * (1 - e);
+      }
+      p.vx += (gx - p.x) * k;
+      p.vy += (gy - p.y) * k;
+      if (pointer.active) {
+        const mx = p.x - pointer.x;
+        const my = p.y - pointer.y;
         const md = Math.hypot(mx, my);
         if (md < R && md > 0.01) {
           const push = (1 - md / R) * 2.6 * f;
@@ -109,6 +138,20 @@ export function initParticles({ reduced }) {
       if (v > vmax) vmax = v;
     }
     return vmax;
+  }
+
+  // A tap: throw the particles around the finger outwards; the springs bring them back.
+  function burst(x, y) {
+    const R = Math.max(70, H * 0.42);
+    for (const p of parts) {
+      const mx = p.x - x;
+      const my = p.y - y;
+      const md = Math.hypot(mx, my);
+      if (md >= R || md < 0.01) continue;
+      const kick = (1 - md / R) ** 2 * 13;
+      p.vx += (mx / md) * kick;
+      p.vy += (my / md) * kick;
+    }
   }
 
   function draw() {
@@ -128,7 +171,7 @@ export function initParticles({ reduced }) {
     const vmax = step(f);
     draw();
     // sleep once the logo has formed and nothing is disturbing it
-    still = form > 0.999 && !mouse.active && vmax < 0.02 ? still + 1 : 0;
+    still = form > 0.999 && !pointer.active && vmax < 0.02 ? still + 1 : 0;
     if (still > 20) return;
     raf = requestAnimationFrame(loop);
   }
@@ -151,10 +194,13 @@ export function initParticles({ reduced }) {
   }).observe(canvas);
 
   if (reduced) return;
+  let started = false;
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
     if (!visible) return;
-    if (form < 1) {
+    // with a mouse, the logo builds itself once enough of it is in view
+    if (!touch && !started && e.intersectionRatio >= 0.15) {
+      started = true;
       gsap.to({ v: form }, {
         v: 1,
         duration: 2.2,
@@ -165,17 +211,47 @@ export function initParticles({ reduced }) {
       });
     }
     wake();
-  }, { threshold: 0.15 }).observe(canvas);
+  }, { threshold: [0, 0.15] }).observe(canvas);
 
-  canvas.addEventListener('pointermove', (e) => {
+  // on touch screens it builds with the scroll: from entering the screen to its middle
+  if (touch) {
+    ScrollTrigger.create({
+      trigger: canvas,
+      start: 'top bottom',
+      end: 'clamp(center 55%)',
+      onUpdate: (self) => {
+        form = self.progress;
+        wake();
+      },
+    });
+  }
+
+  const locate = (e) => {
     const r = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - r.left;
-    mouse.y = e.clientY - r.top;
-    mouse.active = true;
+    pointer.x = e.clientX - r.left;
+    pointer.y = e.clientY - r.top;
+  };
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;
+    locate(e);
+    pointer.down = true;
+    pointer.active = true;
+    burst(pointer.x, pointer.y);
     wake();
   });
-  canvas.addEventListener('pointerleave', () => {
-    mouse.active = false;
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse' && !pointer.down) return;
+    locate(e);
+    pointer.active = true;
     wake();
   });
+  // a finger lifts, the page takes over the gesture to scroll, or the cursor leaves
+  const release = () => {
+    pointer.down = false;
+    pointer.active = false;
+    wake();
+  };
+  canvas.addEventListener('pointerup', (e) => e.pointerType !== 'mouse' && release());
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', release);
 }

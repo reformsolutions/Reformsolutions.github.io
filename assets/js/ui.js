@@ -4,20 +4,36 @@ export function initNav({ lenis }) {
   const nav = document.querySelector('[data-nav]');
   const toggle = nav.querySelector('.nav__toggle');
   const menu = document.getElementById('menu');
-  let darkStory = false;
+  const story = document.querySelector('.story');
+  let darkStory = false; // the dive has filled the screen with the laptop's display
+  let storyUnder = true; // …which only counts while the story is under the nav bar
   let darkSection = false;
   const applyTheme = () => {
-    const dark = darkStory || darkSection;
+    const dark = (darkStory && storyUnder) || darkSection;
     nav.dataset.theme = dark ? 'dark' : 'light';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1B2B3B' : '#FDF8EC');
   };
 
-  // Theme follows whatever section is under the nav bar
+  // Theme follows whatever section is under the nav bar. These are created before the pinned
+  // sections further down, so they're measured last (refreshPriority) to include their pin spacing.
+  if (story) {
+    ScrollTrigger.create({
+      trigger: story,
+      start: 'top 38px',
+      end: 'bottom 38px',
+      refreshPriority: -1,
+      onToggle: (self) => {
+        storyUnder = self.isActive;
+        applyTheme();
+      },
+    });
+  }
   document.querySelectorAll('[data-theme="dark"]').forEach((el) => {
     ScrollTrigger.create({
       trigger: el,
       start: 'top 38px',
       end: 'bottom 38px',
+      refreshPriority: -1,
       onToggle: (self) => {
         el._navDark = self.isActive;
         darkSection = [...document.querySelectorAll('[data-theme="dark"]')].some((s) => s._navDark);
@@ -30,7 +46,6 @@ export function initNav({ lenis }) {
   // Measured on refresh only: reading layout in the scroll handler forced a reflow every frame.
   let lastY = 0;
   let solidAt = Infinity;
-  const story = document.querySelector('.story');
   const measure = () => {
     solidAt = story ? story.offsetTop + story.offsetHeight - window.innerHeight * 0.1 : 0;
   };
