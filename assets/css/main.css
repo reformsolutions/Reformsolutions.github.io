@@ -1217,22 +1217,15 @@ em { font-style: italic; }
   .eq-card__art { max-width: 420px; }
 
   .business__head { grid-template-columns: 1fr; row-gap: 20px; }
-  /* phones: the steps stack and the cable (route.js) runs down their left side, set compactly so
-     the whole route fits on most phone screens; the cable is kept narrow and on its own layer,
-     so drawing it doesn't repaint the text */
-  .route { flex: none; min-height: 0; margin-top: 40px; padding-top: 18px; }
-  .route__svg { right: auto; width: calc(var(--gutter) + 70px); will-change: transform; }
-  .route__steps { position: relative; inset: auto; display: grid; row-gap: 18px; padding-left: 70px; }
+  /* phones: the steps stack and the cable (route.js) runs down their left side; the cable
+     layer is kept narrow and on its own layer, so drawing it doesn't repaint the text */
+  .route { flex: none; min-height: 0; margin-top: 40px; padding-top: 28px; }
+  .route__svg { right: auto; width: calc(var(--gutter) + 84px); will-change: transform; }
+  .route__steps { position: relative; inset: auto; display: grid; row-gap: 26px; padding-left: 84px; }
   .route__step { position: relative; width: auto; will-change: opacity; }
-  .route__step .mono { font-size: 0.62rem; margin-bottom: 5px; }
-  .route__step h3 { font-size: 1.14rem; margin-bottom: 4px; }
-  .route__step p { font-size: 0.86rem; line-height: 1.45; }
-  .route__step:not(.route__step--end) + .route__step--end { margin-top: 26px; } /* room for the fork */
-  .route__step:last-child { min-height: 104px; } /* the plugs end beside it (route.js) */
+  .route__step:not(.route__step--end) + .route__step--end { margin-top: 34px; } /* room for the fork */
+  .route__step:last-child { min-height: 132px; } /* the plugs end beside it (route.js) */
   .route__cable { stroke-width: 12; }
-  /* when it fits the screen, the route holds still while its cable draws (route.js sets the offsets) */
-  .route-pinned .route { position: sticky; }
-  .route-pinned .business__pin::after { content: ""; flex: none; height: var(--route-run, 0px); }
 
   .client { grid-template-columns: 1fr; gap: 6px; }
   .principles__grid { grid-template-columns: 1fr; }

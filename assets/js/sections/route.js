@@ -1,10 +1,8 @@
 // "For businesses" route: the logo's cable winds through the ITAD steps and
 // forks into Reuse / Recycle. An orange RJ45 plug leads each cable end.
 // Wide screens: the section pins and the cable winds across it, with the steps placed by its nodes.
-// Phones: the steps stack and the cable runs down beside them, drawn at a steady pace with the
-// scroll. When the whole route fits on screen (with the browser's bars showing), it holds still
-// while the cable draws, so the plug and the finished cable are always in view; otherwise it
-// scrolls by with the plug leading about two-thirds of the way down the screen.
+// Phones: the steps stack down the page and the cable runs beside them, drawn at a steady pace
+// with the scroll. The plug leads in the lower-middle of the screen, clear of browser toolbars.
 const smooth = (a, b, v) => {
   const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -25,10 +23,9 @@ function pathThrough(pts, prev) {
   return d;
 }
 
-// The plug sits this far past the cable's end (in plug units), so a boot as wide as the cable
-// covers the end.
+// The plug sits this far past the cable's end, so a boot as wide as the cable covers the end.
 const PLUG_AHEAD = 43;
-const PLUG_LEN = PLUG_AHEAD + 35; // cable end → tip of the plug
+const PLUG_REACH = PLUG_AHEAD + 35; // cable end → tip of the plug
 
 // Points along a path, sampled once per layout, for looking up a plug position by depth (y)
 // without reading SVG geometry while scrolling. Phone paths only ever run downwards.
@@ -64,7 +61,6 @@ export function initRoute({ reduced, isMobile }) {
   const section = document.querySelector('.business');
   if (!section) return;
   const pinEl = section.querySelector('.business__pin');
-  const head = section.querySelector('.business__head');
   const route = section.querySelector('[data-route]');
   const svg = route.querySelector('.route__svg');
   const q = (s) => route.querySelector(s);
@@ -74,8 +70,6 @@ export function initRoute({ reduced, isMobile }) {
   const nodesG = q('.route__nodes');
   const steps = [...route.querySelectorAll('.route__step')];
   const portrait = isMobile(); // the page reloads if this flips
-  const plugScale = portrait ? 0.85 : 1;
-  const reach = PLUG_LEN * plugScale;
 
   // a boot on each plug, as wide as the cable, tapering into the plug's ribs
   const boots = Object.values(plug).map((g) => {
@@ -95,39 +89,6 @@ export function initRoute({ reduced, isMobile }) {
   let forkY = 0;
   let endY = 1;
   let lut = null;
-
-  // ---- phones: pin while drawing if the whole route fits ----
-  // Measured against the small viewport (browser bars showing), so nothing ends up under them.
-  let pinned = false;
-  let stickTop = 0;
-  let drawLen = 1; // scroll distance over which the cable draws
-  const probe = document.createElement('div');
-  probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:100vh;height:100svh;visibility:hidden;pointer-events:none';
-  function fit() {
-    if (!portrait) return;
-    document.body.appendChild(probe);
-    const visible = Math.min(probe.getBoundingClientRect().height, window.innerHeight);
-    probe.remove();
-    const h = route.offsetHeight;
-    const free = visible - h;
-    pinned = free >= 24;
-    section.classList.toggle('route-pinned', pinned);
-    if (pinned) {
-      // below the nav where there's room, centred on tall screens, never past the bottom
-      const navH = document.querySelector('[data-nav]')?.offsetHeight || 64;
-      stickTop = Math.round(Math.min(Math.max(navH + 12, free / 2), free - 10));
-      drawLen = Math.round(h * 0.92);
-      route.style.top = `${stickTop}px`;
-      pinEl.style.setProperty('--route-run', `${drawLen + 64}px`); // + a short hold on the finished cable
-    } else {
-      drawLen = h;
-      route.style.top = '';
-      pinEl.style.removeProperty('--route-run');
-    }
-  }
-  // where the route starts in the page (the route itself may be stuck, so measure past the heading)
-  const routeTop = () => head.getBoundingClientRect().bottom + window.scrollY + (parseFloat(getComputedStyle(route).marginTop) || 0);
-  const drawStart = () => routeTop() - (pinned ? stickTop : window.innerHeight * 0.62);
 
   function layout() {
     const cs = getComputedStyle(route);
@@ -159,11 +120,11 @@ export function initRoute({ reduced, isMobile }) {
         return r.top + r.height / 2 - top;
       });
       const last = steps[steps.length - 1].getBoundingClientRect().bottom - top;
-      const x0 = pl + 16;
-      const x1 = pl + 46;
+      const x0 = pl + 18;
+      const x1 = pl + 50;
       forkY = Math.max(mid[2] + 36, mid[3] - 64);
       // both plugs end level with the last line of text
-      endY = Math.max(mid[4] + 30, last - reach);
+      endY = Math.max(mid[4] + 44, last - PLUG_REACH);
       const fork = [x0, forkY];
       trunk = [[x0, 0], [x0, mid[0]], [x0, mid[1]], [x0, mid[2]], fork];
       a = [fork, [x0, mid[3]], [x0, endY]];
@@ -182,7 +143,7 @@ export function initRoute({ reduced, isMobile }) {
     }
     if (portrait) lut = { trunk: sampleByY(cable.trunk, len.trunk), a: sampleByY(cable.a, len.a), b: sampleByY(cable.b, len.b) };
 
-    const c = ((parseFloat(getComputedStyle(cable.trunk).strokeWidth) || 16) + 3) / plugScale;
+    const c = (parseFloat(getComputedStyle(cable.trunk).strokeWidth) || 16) + 3;
     const bootD = `M${-PLUG_AHEAD - 1},${-c / 2}L-28,-5V5L${-PLUG_AHEAD - 1},${c / 2}Z`;
     boots.forEach((p) => p.setAttribute('d', bootD));
 
@@ -222,7 +183,7 @@ export function initRoute({ reduced, isMobile }) {
         el.style.left = el.style.top = el.style.right = '';
         if (mode === 'beyond') {
           // past the end of a branch, clear of the plug
-          el.style.left = `${x + reach + 22}px`;
+          el.style.left = `${x + PLUG_REACH + 22}px`;
           el.style.top = `${y}px`;
           el.style.transform = 'translateY(-50%)';
         } else {
@@ -235,8 +196,7 @@ export function initRoute({ reduced, isMobile }) {
     render();
   }
 
-  const plugTransform = (x, y, ang) =>
-    `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${((ang * 180) / Math.PI).toFixed(1)})${plugScale === 1 ? '' : ` scale(${plugScale})`} translate(${PLUG_AHEAD} 0)`;
+  const plugTransform = (x, y, ang) => `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${((ang * 180) / Math.PI).toFixed(1)}) translate(${PLUG_AHEAD} 0)`;
 
   // Where a plug sits at progress t along its cable (reads path geometry).
   function plugAt(path, L, t) {
@@ -282,7 +242,7 @@ export function initRoute({ reduced, isMobile }) {
     });
   }
 
-  // Phones: one depth for every cable end, so the plugs move at the same steady pace as the scroll.
+  // Phones: one depth for every cable end, so the plugs move at the same steady pace as the page.
   function renderTall() {
     if (!lut) return;
     const y = progress * endY;
@@ -301,9 +261,7 @@ export function initRoute({ reduced, isMobile }) {
 
   const render = portrait ? renderTall : renderWide;
 
-  fit();
   layout();
-  ScrollTrigger.addEventListener('refreshInit', fit);
   ScrollTrigger.addEventListener('refresh', layout);
 
   const onUpdate = (self) => {
@@ -314,6 +272,8 @@ export function initRoute({ reduced, isMobile }) {
   if (!portrait) {
     ScrollTrigger.create({ trigger: section, start: 'top top', end: '+=140%', pin: pinEl, scrub: reduced ? true : 0.8, onUpdate });
   } else {
-    ScrollTrigger.create({ trigger: route, start: () => drawStart(), end: () => drawStart() + drawLen, onUpdate });
+    // starts as the route's top passes 60% down the screen and ends with its bottom 82% down, so the
+    // plug drifts gently from about 70% to 82% and never reaches a bottom toolbar
+    ScrollTrigger.create({ trigger: route, start: 'top 60%', end: 'bottom 82%', onUpdate });
   }
 }
