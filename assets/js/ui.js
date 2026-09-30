@@ -152,8 +152,11 @@ export function heroIntro({ bench, reduced }) {
   if (bench) {
     const S = bench.state;
     tl.fromTo(S, { introY: 2.6, introRy: -0.9 }, { introY: 0, introRy: 0, duration: 1.8, ease: 'expo.out' }, 0.05);
-    // introduce the unit once it has landed (only if the visitor hasn't scrolled on)
-    if (S.co.incoming && window.scrollY < 40) tl.to(S.co.incoming, { o: 1, duration: 0.6, ease: 'power1.out' }, 1.3);
+    // introduce the unit once it has landed (the story hides it again as soon as it starts)
+    if (S.co.incoming) {
+      if (window.scrollY < 40) tl.to(S.co.incoming, { intro: 1, duration: 0.6, ease: 'power1.out' }, 1.3);
+      else S.co.incoming.intro = 1;
+    }
   }
   return tl;
 }

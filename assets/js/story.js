@@ -2,22 +2,23 @@
 // 0 hero · 1 sourcing · 2 inspection · 3 testing · 4 data wipe · 5 cleaning
 // 6 grading · 7 quality check → dive into the screen (8).
 
+// `stage` groups the labels that share the screen, so they keep clear of each other's dots.
 const CALLOUTS = [
-  { id: 'incoming', anchor: 'lidCorner', title: 'Serial No. 2231', detail: 'Incoming · condition unknown', dir: 'l', desktopOnly: true },
-  { id: 'tag', anchor: 'tag', title: 'Asset tag applied', detail: 'Serial No. 2231 · logged at intake' },
-  { id: 'sticker', anchor: 'sticker', title: 'Previous owner’s label', detail: 'Comes off at cleaning', dir: 'l' },
-  { id: 'hinge', anchor: 'hinge', title: 'Hinges', detail: 'Firm · no wobble', status: 'Checked' },
-  { id: 'casing', anchor: 'casing', title: 'Casing', detail: 'Light scuffs · no cracks', status: 'Noted', dy: 44 },
-  { id: 'displayI', anchor: 'display', title: 'Display', detail: 'Glass intact', status: 'Checked', dir: 'l' },
-  { id: 'battery', anchor: 'battery', title: 'Battery', detail: '91% health · 312 cycles', status: 'Testing', pass: 'Pass', dy: 40 },
-  { id: 'ssd', anchor: 'ssd', title: 'Storage', detail: 'SMART healthy · 97% life', status: 'Testing', pass: 'Pass', dy: 30, desktopOnly: true },
-  { id: 'ram', anchor: 'ram', title: 'Memory', detail: '2 × 8 GB · 0 errors', status: 'Testing', pass: 'Pass', dir: 'l', desktopOnly: true },
-  { id: 'fan', anchor: 'fan', title: 'CPU & thermals', detail: '68 °C peak under load', status: 'Testing', pass: 'Pass', desktopOnly: true },
-  { id: 'keys', anchor: 'keys', title: 'Keyboard', detail: '77 / 77 keys registered', status: 'Testing', pass: 'Pass' },
-  { id: 'ports', anchor: 'ports', title: 'Ports', detail: '6 / 6 working', status: 'Testing', pass: 'Pass', dir: 'l', dy: 36, desktopOnly: true },
-  { id: 'displayT', anchor: 'display', title: 'Display', detail: '0 dead pixels · even backlight', status: 'Testing', pass: 'Pass', dir: 'l', desktopOnly: true },
-  { id: 'wipe', anchor: 'ssd', title: 'NVMe SSD · 512 GB', detail: 'Overwrite + verification', status: 'Wiping', pass: 'Verified' },
-  { id: 'graded', anchor: 'tag', title: 'Grade A', detail: 'Minimal signs of use' },
+  { id: 'incoming', stage: 0, anchor: 'lidCorner', title: 'Serial No. 2231', detail: 'Incoming · condition unknown', dir: 'l', desktopOnly: true },
+  { id: 'tag', stage: 1, anchor: 'tag', title: 'Asset tag applied', detail: 'Serial No. 2231 · logged at intake' },
+  { id: 'sticker', stage: 1, anchor: 'sticker', title: 'Previous owner’s label', detail: 'Comes off at cleaning', dir: 'l' },
+  { id: 'hinge', stage: 2, anchor: 'hinge', title: 'Hinges', detail: 'Firm · no wobble', status: 'Checked' },
+  { id: 'casing', stage: 2, anchor: 'casing', title: 'Casing', detail: 'Light scuffs · no cracks', status: 'Noted', dy: 44 },
+  { id: 'displayI', stage: 2, anchor: 'display', title: 'Display', detail: 'Glass intact', status: 'Checked', dir: 'l' },
+  { id: 'battery', stage: 3, anchor: 'battery', title: 'Battery', detail: '91% health · 312 cycles', status: 'Testing', pass: 'Pass', dy: 40 },
+  { id: 'ssd', stage: 3, anchor: 'ssd', title: 'Storage', detail: 'SMART healthy · 97% life', status: 'Testing', pass: 'Pass', dy: 30, desktopOnly: true },
+  { id: 'ram', stage: 3, anchor: 'ram', title: 'Memory', detail: '2 × 8 GB · 0 errors', status: 'Testing', pass: 'Pass', dir: 'l', desktopOnly: true },
+  { id: 'fan', stage: 3, anchor: 'fan', title: 'CPU & thermals', detail: '68 °C peak under load', status: 'Testing', pass: 'Pass', desktopOnly: true },
+  { id: 'keys', stage: 3, anchor: 'keys', title: 'Keyboard', detail: '77 / 77 keys registered', status: 'Testing', pass: 'Pass' },
+  { id: 'ports', stage: 3, anchor: 'ports', title: 'Ports', detail: '6 / 6 working', status: 'Testing', pass: 'Pass', dir: 'l', dy: 36, desktopOnly: true },
+  { id: 'displayT', stage: 3, anchor: 'display', title: 'Display', detail: '0 dead pixels · even backlight', status: 'Testing', pass: 'Pass', dir: 'l', desktopOnly: true },
+  { id: 'wipe', stage: 4, anchor: 'ssd', title: 'NVMe SSD · 512 GB', detail: 'Overwrite + verification', status: 'Wiping', pass: 'Verified' },
+  { id: 'graded', stage: 6, anchor: 'tag', title: 'Grade A', detail: 'Minimal signs of use' },
 ];
 
 // Camera + framing per stage. Mobile keeps the same shots, pulled back & raised.
@@ -48,6 +49,9 @@ export function initStory({ bench, lenis, isMobile, reduced, onDark }) {
 
   bench.addCallouts(CALLOUTS.filter((c) => !(mobile && c.desktopOnly)));
   const co = (id) => S.co[id] || { o: 0, pass: 0 };
+  // The scroll owns `o` (shown at the top, gone once the story starts); the hero intro
+  // fades the label in through `intro`, so a late intro can't leave it up mid-story.
+  if (S.co.incoming) Object.assign(S.co.incoming, { o: 1, intro: reduced ? 1 : 0 });
 
   // hero pose + framing
   const stageShift = mobile ? 0 : 0.17;

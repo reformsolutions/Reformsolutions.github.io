@@ -9,7 +9,7 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | --- | --- |
 | Hero → Process | A procedurally built 3D laptop (Three.js) is followed through the bench: sourcing, inspection (scan line), hardware testing (exploded view), data sanitization (SSD wipe), cleaning (brush pass), grading (stamp) and QC. The camera then dives into the laptop's screen, and the next section's heading rises onto it (the dark section slides up under the dive with a see-through top). |
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
-| For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. |
+| For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them; it finishes as the bottom of the route comes into view, so on most phones the whole cable is on screen at the end. |
 | Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; for now it hands off to the visitor's email app (see Enquiry form below). |
 | Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. |
 
@@ -38,6 +38,10 @@ on phones, the space right of the stage text on desktop — and the bench (`asse
 pulls the camera back or shifts the view whenever the laptop's on-screen footprint would spill out of it.
 If you change the copy length or layout, the framing adapts on its own.
 
+The callout labels keep clear of each other too: when a label appears, its box goes above or below its dot,
+whichever keeps it off the labels already showing and off the other dots of the same stage (the `stage`
+field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the screen with.
+
 ## Performance notes
 
 - `vendor/three.min.js` is a trimmed three.js build (see `vendor/README.md`).
@@ -55,6 +59,8 @@ If you change the copy length or layout, the framing adapts on its own.
   milliseconds. Don't read layout (`offsetTop`, `getBoundingClientRect`…) in scroll handlers, don't
   animate layout properties like `top` in CSS, and give elements that the story animates inside the
   normal page flow `will-change` so each frame doesn't repaint everything.
+- On phones the business route's cable is drawn from points sampled once per layout, on its own narrow
+  layer, so scrolling never reads SVG geometry or repaints the text beside it.
 - The footer particles stop animating once the logo has formed.
 - The full logo preloader plays once per visit; later page loads get a short fade.
 

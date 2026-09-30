@@ -1217,8 +1217,14 @@ em { font-style: italic; }
   .eq-card__art { max-width: 420px; }
 
   .business__head { grid-template-columns: 1fr; row-gap: 20px; }
-  .route { min-height: 1100px; margin-top: 40px; }
-  .route__step { width: calc(100% - 84px - var(--gutter) * 2); }
+  /* phones: the steps stack and the cable (route.js) runs down their left side; the cable
+     layer is kept narrow and on its own layer, so drawing it doesn't repaint the text */
+  .route { flex: none; min-height: 0; margin-top: 40px; padding-top: 28px; }
+  .route__svg { right: auto; width: calc(var(--gutter) + 84px); will-change: transform; }
+  .route__steps { position: relative; inset: auto; display: grid; row-gap: 26px; padding-left: 84px; }
+  .route__step { position: relative; width: auto; will-change: opacity; }
+  .route__step:not(.route__step--end) + .route__step--end { margin-top: 34px; } /* room for the fork */
+  .route__step:last-child { min-height: 132px; } /* the plugs end beside it (route.js) */
   .route__cable { stroke-width: 12; }
 
   .client { grid-template-columns: 1fr; gap: 6px; }
@@ -1256,6 +1262,10 @@ em { font-style: italic; }
 .no-js .stage, .no-webgl .stage { position: static; opacity: 1; visibility: visible; transform: none; translate: none; width: auto; max-width: 620px; }
 .no-js .rail, .no-webgl .rail, .no-webgl .bench, .no-webgl .bench-grid, .no-webgl .callouts, .no-js .bench { display: none; }
 .no-webgl .process__shade, .no-js .process__shade { display: none; }
+.no-js .route { min-height: 0; }
+.no-js .route__svg { display: none; }
+.no-js .route__steps { position: static; display: grid; gap: 32px; padding-left: 0; }
+.no-js .route__step { position: static; width: auto; max-width: 520px; opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

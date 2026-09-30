@@ -73,31 +73,34 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
   };
 
   // ---- callouts (HTML labels pinned to 3D anchors) ----
+  // `o` fades a label in and out; an optional `intro` factor (hero intro) multiplies it.
   const callouts = [];
   function addCallouts(list) {
     for (const c of list) {
       const el = document.createElement('div');
-      el.className = `callout${c.dir === 'l' ? ' callout--left' : ''}`;
+      el.className = 'callout';
       el.innerHTML = `<i class="callout__dot"></i><span class="callout__line"></span><div class="callout__box"><b>${c.title}</b><span>${c.detail}</span>${c.status ? `<em class="callout__status">${c.status}</em>` : ''}</div>`;
       layer.appendChild(el);
       const bx = mobile ? 30 : 64;
       const dy = c.dy ?? (mobile ? -30 : -44);
       el.style.setProperty('--bx', `${bx}px`);
-      el.style.setProperty('--by', `${dy}px`);
-      el.style.setProperty('--len', `${Math.hypot(bx, dy)}px`);
-      const entry = { ...c, el, box: el.querySelector('.callout__box'), statusEl: el.querySelector('.callout__status'), passed: null, shown: false, bx, dy, left: null, bw: 0 };
-      setSide(entry, c.dir === 'l');
+      const entry = { ...c, el, box: el.querySelector('.callout__box'), statusEl: el.querySelector('.callout__status'), passed: null, shown: false, placed: false, bx, dy, by: null, left: null, side: false, shift: 0, shiftSet: 0, x: 0, y: 0, bw: 0, bh: 0 };
+      setGeom(entry, c.dir === 'l', dy);
       state.co[c.id] = { o: 0, pass: 0 };
       callouts.push(entry);
     }
   }
 
-  // Box sits right of its dot unless that would run off-screen (then left).
-  function setSide(c, left) {
-    if (c.left === left) return;
+  // The box sits beside its dot (`left` or right), its centre `by` px above (−) or below (+)
+  // the dot; the leader line runs from the dot to the box's near edge.
+  function setGeom(c, left, by) {
+    if (c.left === left && c.by === by) return;
+    if (c.left !== left) c.el.classList.toggle('callout--left', left);
     c.left = left;
-    c.el.classList.toggle('callout--left', left);
-    c.el.style.setProperty('--ang', `${Math.atan2(c.dy, left ? -c.bx : c.bx)}rad`);
+    c.by = by;
+    c.el.style.setProperty('--by', `${by}px`);
+    c.el.style.setProperty('--len', `${Math.hypot(c.bx, by).toFixed(1)}px`);
+    c.el.style.setProperty('--ang', `${Math.atan2(by, left ? -c.bx : c.bx).toFixed(4)}rad`);
   }
 
   // ---- sizing: pixel budget + adaptive resolution ----
@@ -329,48 +332,98 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
     updateCallouts();
   }
 
+  function project(c) {
+    const a = laptop.anchors[c.anchor];
+    if (!a) return false;
+    a.getWorldPosition(vTmp);
+    vTmp.project(camera);
+    if (vTmp.z > 1) return false;
+    c.x = (vTmp.x * 0.5 + 0.5) * W;
+    c.y = (-vTmp.y * 0.5 + 0.5) * H;
+    return true;
+  }
+  const boxRect = (c, by) => {
+    const l = (c.side ? c.x - c.bx - c.bw : c.x + c.bx) + c.shift;
+    const t = c.y + by - c.bh / 2;
+    return [l, t, l + c.bw, t + c.bh];
+  };
+  const overlap = (a, b, pad = 0) =>
+    Math.max(0, Math.min(a[2], b[2]) + pad - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) + pad - Math.max(a[1], b[1]));
+
+  // Where a label's box goes above/below its dot is settled when the label appears, clear of
+  // the labels already showing and of every dot in its stage (so a label that appears later
+  // doesn't land under this box), and then kept while it stays up.
+  function placeCallout(c, live) {
+    const boxes = live.filter((o) => o !== c && o.placed).map((o) => boxRect(o, o.by));
+    const dots = [];
+    for (const o of callouts) {
+      if (o === c || o.stage !== c.stage || !(live.includes(o) || project(o))) continue;
+      dots.push([o.x - 8, o.y - 8, o.x + 8, o.y + 8]);
+    }
+    let best = c.dy;
+    let bestCost = Infinity;
+    for (const by of [c.dy, -c.dy, c.dy * 1.9, -c.dy * 1.9]) {
+      const r = boxRect(c, by);
+      let cost = (Math.max(0, 8 - r[1]) + Math.max(0, r[3] - (H - 8))) * c.bw; // off-screen
+      for (const b of boxes) cost += overlap(r, b, 8);
+      for (const d of dots) cost += overlap(r, d);
+      if (cost < bestCost) {
+        best = by;
+        bestCost = cost;
+      }
+      if (cost === 0) break;
+    }
+    setGeom(c, c.side, best);
+    c.placed = true;
+  }
+
   function updateCallouts() {
+    const live = [];
     for (const c of callouts) {
       const st = state.co[c.id];
-      const o = st ? st.o : 0;
-      if (o <= 0.001) {
+      const o = st ? st.o * (st.intro ?? 1) : 0;
+      if (o <= 0.001 || !project(c)) {
         if (c.shown) {
           c.el.style.opacity = '0';
           c.shown = false;
         }
+        c.placed = false;
         continue;
       }
-      const a = laptop.anchors[c.anchor];
-      if (!a) continue;
-      a.getWorldPosition(vTmp);
-      vTmp.project(camera);
-      if (vTmp.z > 1) continue;
-      const x = (vTmp.x * 0.5 + 0.5) * W;
-      const y = (-vTmp.y * 0.5 + 0.5) * H;
-      if (!c.bw) c.bw = c.box.offsetWidth;
-      const preferLeft = c.dir === 'l';
-      const fitsRight = x + c.bx + c.bw < W - 10;
-      const fitsLeft = x - c.bx - c.bw > 10;
-      if (!fitsLeft && !fitsRight) setSide(c, x > W / 2);
-      else setSide(c, preferLeft ? !(fitsRight && !fitsLeft) : !fitsRight && fitsLeft);
-      // if neither side has room (narrow phones), slide the box back on-screen
-      const boxLeft = c.left ? x - c.bx - c.bw : x + c.bx;
-      const shift = boxLeft < 8 ? 8 - boxLeft : boxLeft + c.bw > W - 8 ? W - 8 - (boxLeft + c.bw) : 0;
-      if (Math.abs(shift - (c.shift || 0)) > 0.5) {
-        c.shift = shift;
-        c.box.style.setProperty('--shift', `${shift.toFixed(1)}px`);
-      }
-      c.el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-      c.el.style.opacity = o.toFixed(3);
-      c.shown = true;
       if (c.statusEl && c.pass) {
         const passed = st.pass >= 0.5;
         if (passed !== c.passed) {
           c.passed = passed;
           c.el.dataset.status = passed ? 'pass' : 'testing';
           c.statusEl.textContent = passed ? c.pass : c.status;
+          c.bw = 0; // the status word changed the box width
         }
       }
+      if (!c.bw) {
+        c.bw = c.box.offsetWidth;
+        c.bh = c.box.offsetHeight;
+      }
+      // right of the dot unless that runs off-screen (then left); if neither side has room
+      // (narrow phones), the box slides back on-screen
+      const { x } = c;
+      const fitsRight = x + c.bx + c.bw < W - 10;
+      const fitsLeft = x - c.bx - c.bw > 10;
+      c.side = !fitsLeft && !fitsRight ? x > W / 2 : c.dir === 'l' ? !(fitsRight && !fitsLeft) : !fitsRight && fitsLeft;
+      const boxLeft = c.side ? x - c.bx - c.bw : x + c.bx;
+      c.shift = boxLeft < 8 ? 8 - boxLeft : boxLeft + c.bw > W - 8 ? W - 8 - (boxLeft + c.bw) : 0;
+      c.o = o;
+      live.push(c);
+    }
+    for (const c of live) {
+      if (!c.placed) placeCallout(c, live);
+      setGeom(c, c.side, c.by);
+      if (Math.abs(c.shift - c.shiftSet) > 0.5) {
+        c.shiftSet = c.shift;
+        c.box.style.setProperty('--shift', `${c.shift.toFixed(1)}px`);
+      }
+      c.el.style.transform = `translate3d(${c.x.toFixed(1)}px, ${c.y.toFixed(1)}px, 0)`;
+      c.el.style.opacity = c.o.toFixed(3);
+      c.shown = true;
     }
   }
 
@@ -383,7 +436,7 @@ export function createBench({ canvas, layer, isMobile, reduced }) {
   function signature() {
     const S = state, c = S.cam;
     let co = 0;
-    for (const id in S.co) co += S.co[id].o * 7 + S.co[id].pass;
+    for (const id in S.co) co += S.co[id].o * (S.co[id].intro ?? 1) * 7 + S.co[id].pass;
     return [
       S.px, S.py, S.pz, S.rx, S.ry, S.rz, S.introY, S.introRy, S.lid, S.explode, S.ssdOut, S.ssdGlow, S.ssdWiped,
       S.keysWave, S.scan, S.scanOn, S.clean, S.tag, S.grade, S.glass, S.post, S.diag, S.wipe, S.ready, S.fade,
