@@ -70,7 +70,7 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 ## Things to fill in before launch
 
-- **Enquiry form:** add a free Web3Forms access key (see *Enquiry form* below) so enquiries arrive without the visitor's email app opening.
+- **Enquiry form:** set up the free Google Apps Script (see *Enquiry form* below) so enquiries, photos and documents arrive without the visitor's email app opening.
 - **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone and WhatsApp number is `+91 866 814 5793`: in the contact section and footer (`tel:` links), and in the WhatsApp button's link at the end of `index.html` (`wa.me/918668145793`, whose `text=` sets the chat's opening message).
 - **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
@@ -81,30 +81,45 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 The contact form has three tabs (Buy refurbished, Sell or retire assets, Something else), each with its own fields.
 
-**Recommended: Web3Forms (free; the visitor stays on the page).** One-time setup:
+**Recommended: Google Apps Script (free; photos and documents included; the visitor stays on the page).**
+The script in `google-apps-script/enquiries.gs` receives each enquiry and:
 
-1. Go to [web3forms.com](https://web3forms.com), enter `info.reformsolutions@gmail.com` and create an access key. It
-   arrives by email.
-2. In `index.html`, find `<input type="hidden" name="access_key" value="">` and paste the key between the quotes.
-3. Push, then send yourself a test enquiry from the live site.
+- emails it to `info.reformsolutions@gmail.com` with any photos or documents attached (subject "Website enquiry:
+  <type> — <company or name>"; replying goes straight to the customer),
+- saves the files in a Google Drive folder called "Website enquiries", one folder per enquiry,
+- adds a row to a Google Sheet, so every enquiry is also in one list.
 
-From then on the button sends the enquiry in the background. It arrives in that inbox with the subject
-"Website enquiry: <type> — <company or name>", and replying goes straight to the visitor's email address. The visitor
-sees "Thanks — we've got your enquiry." on the page. If sending fails, the form stays filled in and suggests email
-or WhatsApp instead. The free plan covers 250 enquiries a month and doesn't take file attachments, so sellers are
-pointed to WhatsApp for photos (in the Sell tab and in the confirmation). The key is meant to be public: it can only
-send to your inbox. A hidden `botcheck` field catches simple spam bots.
+One-time setup, signed in to Google as `info.reformsolutions@gmail.com`:
 
-**Until a key is added (now):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the button
-opens the visitor's own email app with a new email to that address, filled in with everything they entered (sellers
-are asked to attach photos there). A confirmation panel offers **Try again** and **Copy your enquiry** for visitors
-whose email app doesn't open.
+1. Open [Google Sheets](https://sheets.google.com) and create a blank spreadsheet (for example "Website enquiries").
+2. **Extensions → Apps Script.** Delete the sample code, paste in everything from `google-apps-script/enquiries.gs`,
+   and click **Save**.
+3. **Deploy → New deployment → Select type: Web app.** Execute as: **Me**. Who has access: **Anyone**. **Deploy.**
+4. Google asks you to authorise it: choose your account → **Advanced** → **Go to (project name) (unsafe)** → **Allow**.
+   The warning appears because it's your own script rather than an app Google has reviewed. It asks to send email as
+   you, keep files in your Drive and edit this spreadsheet.
+5. Copy the **Web app URL** (it ends in `/exec`). Opening it in a browser should show "Reform Solutions enquiry form:
+   ready."
+6. In `index.html`, paste that URL between the quotes of `data-endpoint=""` on the `<form class="enquiry" …>` line.
+   Push, then send yourself a test enquiry with a photo from the live site.
 
-**Another form service instead:** leave `access_key` empty and put the service's endpoint URL in the form's `action`.
-The form then posts to it (multipart; the visitor goes to the service's page unless it redirects back), and the photo
-upload on the Sell tab switches itself on: up to 5 photos, resized in the browser to 1600px JPEGs and sent as
-`Photo 1` … `Photo 5`. If the service uses extra hidden fields (such as `_subject`, `_next` or `_captcha`), add them
-inside the form as its docs describe; a `_subject` field is filled in automatically.
+From then on the button sends the enquiry in the background and the visitor sees "Thanks — we've got your enquiry."
+on the page. On the Sell tab they can add photos (resized in the browser) or a list of the equipment (PDF, Excel,
+Word, CSV or text): up to 5 files, 10 MB each and 20 MB in all. If sending fails, the form stays filled in and suggests
+email or WhatsApp instead. A free Gmail account can send about 100 of these emails a day; beyond that the Sheet row
+and the Drive files are still saved. A hidden `botcheck` field and a limit of 20 enquiries a minute keep simple spam
+out. After changing the script: **Deploy → Manage deployments → Edit → Version: New version**, so the URL stays the same.
+
+**Until the script is set up (now):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the
+button opens the visitor's own email app with a new email to that address, filled in with everything they entered
+(sellers are asked to attach photos or their equipment list there). A confirmation panel offers **Try again** and
+**Copy your enquiry** for visitors whose email app doesn't open.
+
+**Another form service instead:** leave `data-endpoint` empty and put the service's endpoint URL in the form's
+`action`. The form then posts to it (multipart; the visitor goes to the service's page unless it redirects back), and
+the file box on the Sell tab switches itself on, sending `File 1` … `File 5`. If the service uses extra hidden fields
+(such as `_subject`, `_next` or `_captcha`), add them inside the form as its docs describe; a `_subject` field is
+filled in automatically.
 
 Fields live in the `<form class="enquiry">` block of `index.html`; each field's `name` is the label used in the email.
 
@@ -120,6 +135,7 @@ assets/js/sections/        equipment track + isometric art, business route, foot
 assets/js/ui.js            nav, menu, reveals, FAQ, form, sustainability loop
 assets/img/brand.svg       vector logo (traced from the original artwork) used across the site
 vendor/                    three.js r186 (trimmed), GSAP 3.15 (+ plugins), Lenis 1.3 — see vendor/README.md
+google-apps-script/        the enquiry form's backend (paste into Google Apps Script; see Enquiry form)
 serve.mjs                  local preview server (not needed on GitHub Pages)
 ```
 

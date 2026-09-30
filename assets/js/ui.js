@@ -218,18 +218,24 @@ export function initFaq() {
 // ---- Enquiry form -----------------------------------------------------------
 // Tabs switch the fields for each enquiry type. On submit the form is checked and
 // multi-choice answers are joined into single fields, then:
-//  · no form service yet (the action is a mailto: link): the visitor's email app opens
-//    with everything filled in, and a panel offers "Try again" / "Copy your enquiry";
-//  · a form service URL in the action: the form posts there directly, and the photo
-//    upload on the Sell tab switches on (photos are resized in the browser first).
+//  · our Google Apps Script's URL in the form's data-endpoint: the enquiry and any photos or
+//    documents (Sell tab) are sent in the background and a confirmation shows on the page;
+//  · otherwise, with the mailto: action: the visitor's email app opens with everything filled
+//    in, and a panel offers "Try again" / "Copy your enquiry";
+//  · a form service URL in the action instead: the form posts there, files included.
+// Photos are resized in the browser before they're sent.
 const ENQUIRY_TYPES = {
   buy: { button: 'Request a quote', message: 'Which models or specs do you need? Any delivery timeline?' },
   sell: { button: 'Get a valuation', message: 'Models, age and specs if you know them — anything that helps us value it.' },
   other: { button: 'Send message', message: 'How can we help?' },
 };
 const EMAIL_LABELS = { email: 'Email', 'Approx quantity': 'Approx. quantity' };
-const MAX_PHOTOS = 5;
-const MAX_PHOTO_MB = 5;
+// files sent with an enquiry (Sell tab): photos, or a list of the equipment as a document
+const MAX_FILES = 5;
+const MAX_FILE_MB = 10;
+const MAX_TOTAL_MB = 20; // what the Apps Script can take in one go (base64 adds a third) and email on
+const MB = 1024 * 1024;
+const DOC_FILE = /\.(pdf|docx?|xlsx?|csv|txt)$/i;
 
 // Resize a photo to at most 1600px on its longest side (as JPEG) so uploads stay small.
 async function shrinkPhoto(file) {
@@ -288,11 +294,11 @@ export function initForm({ lenis } = {}) {
   const form = document.querySelector('.enquiry');
   if (!form) return;
   const action = (form.getAttribute('action') || '').trim();
-  // How an enquiry leaves: 'web3' (a Web3Forms access key in the form: sent in the background, the
-  // visitor stays on the page), 'post' (another form service's URL as the action: the form posts there,
-  // photos included), or 'email' (the mailto: action: the visitor's email app opens, all filled in).
-  const accessKey = (form.elements.namedItem('access_key')?.value || '').trim();
-  const mode = accessKey && form.dataset.service ? 'web3' : /^https?:\/\//i.test(action) ? 'post' : 'email';
+  // How an enquiry leaves: 'script' (our Google Apps Script's URL in data-endpoint: sent in the
+  // background with any files, the visitor stays on the page), 'post' (another form service's URL as
+  // the action: the form posts there), or 'email' (the mailto: action: the visitor's email app opens).
+  const endpoint = (form.dataset.endpoint || '').trim();
+  const mode = endpoint ? 'script' : /^https?:\/\//i.test(action) ? 'post' : 'email';
   const viaEmail = mode === 'email';
   const inbox = action.startsWith('mailto:')
     ? action.slice('mailto:'.length)
@@ -387,15 +393,16 @@ export function initForm({ lenis } = {}) {
     setNote(left.length ? `Please check: ${left.join(', ')}.` : '', left.length > 0);
   });
 
-  // ---- photos: uploaded only to a form service that takes files ('post'); by email they're attached
-  // to the email, and after a Web3Forms enquiry (its free plan takes no files) they go on WhatsApp ----
+  // ---- files (Sell tab): photos, or a list of the equipment as a PDF, Excel, Word, CSV or text file.
+  // Sent with the enquiry to the Apps Script ('script') or a form service ('post'); by email the
+  // visitor attaches them to the email instead ----
   const upload = form.querySelector('.upload');
   const uploadHint = form.querySelector('.upload-hint');
   const picker = form.querySelector('.upload__picker');
   const drop = form.querySelector('.upload__drop');
   const list = form.querySelector('.upload__list');
   const slots = [...form.querySelectorAll('.upload__slot')];
-  const photos = [];
+  const attached = []; // { file, url }: url is a preview for photos the browser can show
   const canAssignFiles = (() => {
     try {
       const dt = new DataTransfer();
@@ -405,79 +412,88 @@ export function initForm({ lenis } = {}) {
       return false;
     }
   })();
-  if (upload) upload.hidden = mode !== 'post';
-  if (uploadHint) {
-    uploadHint.hidden = mode === 'post';
-    uploadHint.querySelectorAll('[data-when]').forEach((el) => (el.hidden = el.dataset.when !== (viaEmail ? 'email' : 'sent')));
-  }
+  if (upload) upload.hidden = viaEmail;
+  if (uploadHint) uploadHint.hidden = !viaEmail;
   if (mode !== 'post') slots.forEach((s) => (s.disabled = true));
   else if (picker && !canAssignFiles) {
-    picker.name = 'Photos'; // older browsers: send the picked files as they are
+    picker.name = 'Files'; // older browsers: send the picked files as they are
     slots.forEach((s) => s.remove());
   }
 
-  function renderPhotos() {
+  const isPhoto = (file) => file.type.startsWith('image/') || /\.(heic|heif)$/i.test(file.name);
+
+  function renderFiles() {
     list.replaceChildren(
-      ...photos.map((p, i) => {
+      ...attached.map((a) => {
         const li = document.createElement('li');
-        const img = document.createElement('img');
-        img.src = p.url;
-        img.alt = `Photo ${i + 1}`;
+        if (a.url) {
+          const img = document.createElement('img');
+          img.src = a.url;
+          img.alt = a.file.name;
+          li.append(img);
+        } else {
+          li.className = 'is-doc';
+          const ext = document.createElement('span');
+          ext.className = 'upload__doc-ext';
+          ext.textContent = a.file.name.includes('.') ? a.file.name.split('.').pop().toUpperCase() : 'FILE';
+          const name = document.createElement('span');
+          name.className = 'upload__doc-name';
+          name.textContent = a.file.name;
+          li.append(ext, name);
+        }
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'upload__remove';
-        remove.setAttribute('aria-label', `Remove photo ${i + 1}`);
+        remove.setAttribute('aria-label', `Remove ${a.file.name}`);
         remove.textContent = '×';
         remove.addEventListener('click', () => {
-          URL.revokeObjectURL(p.url);
-          photos.splice(photos.indexOf(p), 1);
-          renderPhotos();
+          if (a.url) URL.revokeObjectURL(a.url);
+          attached.splice(attached.indexOf(a), 1);
+          renderFiles();
         });
-        li.append(img, remove);
+        li.append(remove);
         return li;
       })
     );
   }
 
-  async function addPhotos(files) {
+  async function addFiles(files) {
     let skipped = 0;
     for (const file of files) {
-      if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
+      const photo = isPhoto(file);
+      if ((!photo && !DOC_FILE.test(file.name)) || attached.length >= MAX_FILES) {
         skipped++;
         continue;
       }
-      if (photos.length >= MAX_PHOTOS) {
+      const ready = photo ? await shrinkPhoto(file) : file;
+      const total = attached.reduce((n, a) => n + a.file.size, ready.size);
+      if (ready.size > MAX_FILE_MB * MB || total > MAX_TOTAL_MB * MB) {
         skipped++;
         continue;
       }
-      const small = await shrinkPhoto(file);
-      if (small.size > MAX_PHOTO_MB * 1024 * 1024) {
-        skipped++;
-        continue;
-      }
-      photos.push({ file: small, url: URL.createObjectURL(small) });
+      attached.push({ file: ready, url: /^image\/(jpeg|png|webp|gif)$/.test(ready.type) ? URL.createObjectURL(ready) : '' });
     }
-    renderPhotos();
-    setNote(skipped ? `Up to ${MAX_PHOTOS} photos, ${MAX_PHOTO_MB} MB each — ${skipped} not added.` : '', skipped > 0);
+    renderFiles();
+    setNote(skipped ? `Photos, or PDF, Excel, Word, CSV or text files: up to ${MAX_FILES}, ${MAX_FILE_MB} MB each — ${skipped} not added.` : '', skipped > 0);
   }
 
-  if (mode === 'post' && picker && canAssignFiles) {
+  if (picker && (mode === 'script' || (mode === 'post' && canAssignFiles))) {
     picker.addEventListener('change', () => {
       const files = [...picker.files];
       picker.value = '';
-      addPhotos(files);
+      addFiles(files);
     });
     ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.add('is-drag')));
     ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove('is-drag')));
   }
 
-  function fillPhotoSlots() {
+  function fillSlots() {
     slots.forEach((slot, i) => {
-      const photo = photos[i];
-      slot.disabled = !photo;
-      if (!photo) return;
+      const a = attached[i];
+      slot.disabled = !a;
+      if (!a) return;
       const dt = new DataTransfer();
-      dt.items.add(photo.file);
+      dt.items.add(a.file);
       slot.files = dt.files;
     });
   }
@@ -504,14 +520,15 @@ export function initForm({ lenis } = {}) {
       else lines.push(`${EMAIL_LABELS[name] || name}: ${v}`);
     }
     lines.push('', 'Message:', text);
-    if (type === 'sell') lines.push('', 'Photos: please attach them to this email before sending.');
+    if (type === 'sell') lines.push('', 'Photos or a list of the equipment: please attach them to this email before sending.');
     return lines.join('\n');
   }
 
   // the confirmation: 'email' (handed to the email app) or 'sent' (sent in the background)
   function showDone(kind) {
     done.querySelectorAll('[data-when]').forEach((el) => (el.hidden = el.dataset.when !== kind));
-    done.querySelectorAll('.enquiry__done-photos').forEach((el) => (el.hidden = type !== 'sell'));
+    // (after sending in the background, only if nothing was attached)
+    done.querySelectorAll('.enquiry__done-photos').forEach((el) => (el.hidden = type !== 'sell' || (kind === 'sent' && attached.length > 0)));
     form.classList.add('is-sent');
     done.hidden = false;
     refreshSoon();
@@ -521,28 +538,39 @@ export function initForm({ lenis } = {}) {
     done.focus({ preventScroll: true });
   }
 
-  // Web3Forms: the filled-in fields as form data (a plain cross-site post, so no preflight request),
-  // with the access key and a ticked honeypot among them; `email` doubles as the reply-to address.
+  // Google Apps Script: the filled-in fields and any files (base64) as one JSON post, sent as text/plain
+  // so the browser makes a plain cross-site request (no preflight); the script answers in JSON.
   // A failure keeps the form as it is and says how else to reach us.
+  const toBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   let sending = false;
-  async function sendWeb3(subject) {
-    const body = new FormData();
-    for (const [name, raw] of new FormData(form)) {
-      const v = typeof raw === 'string' ? raw.trim() : '';
-      if (v && !name.startsWith('_')) body.append(name, v);
-    }
-    body.set('subject', subject);
-    body.set('from_name', 'Reform Solutions website');
+  async function sendToScript(subject) {
     sending = true;
     submit.setAttribute('aria-busy', 'true');
-    submitLabel.textContent = 'Sending…';
+    submitLabel.textContent = attached.length ? 'Uploading…' : 'Sending…';
     setNote();
     const stop = new AbortController();
-    const timer = setTimeout(() => stop.abort(), 20000);
+    const timer = setTimeout(() => stop.abort(), 90000);
     try {
-      const res = await fetch(form.dataset.service, { method: 'POST', headers: { Accept: 'application/json' }, body, signal: stop.signal });
+      const fields = {};
+      for (const [name, raw] of new FormData(form)) {
+        const v = typeof raw === 'string' ? raw.trim() : '';
+        if (v && name !== 'botcheck' && !name.startsWith('_')) fields[name] = v;
+      }
+      const files = await Promise.all(attached.map(async ({ file }) => ({ name: file.name, type: file.type, data: await toBase64(file) })));
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ subject, fields, files, botcheck: Boolean(field('botcheck')?.checked) }),
+        signal: stop.signal,
+      });
       const out = await res.json().catch(() => ({}));
-      if (!res.ok || !out.success) throw new Error(out.body?.message || out.message || `HTTP ${res.status}`);
+      if (!res.ok || !out.success) throw new Error(out.message || `HTTP ${res.status}`);
       showDone('sent');
     } catch (err) {
       console.warn('[enquiry]', err);
@@ -562,8 +590,8 @@ export function initForm({ lenis } = {}) {
     if (sending || !validate()) return;
     joinChoices();
     const subject = subjectLine();
-    if (mode === 'web3') {
-      sendWeb3(subject);
+    if (mode === 'script') {
+      sendToScript(subject);
       return;
     }
     if (viaEmail) {
@@ -576,7 +604,7 @@ export function initForm({ lenis } = {}) {
       return;
     }
     if (field('_subject')) field('_subject').value = subject;
-    if (canAssignFiles) fillPhotoSlots();
+    if (canAssignFiles) fillSlots();
     form.method = 'post';
     form.enctype = 'multipart/form-data';
     submit.setAttribute('aria-busy', 'true');
@@ -604,6 +632,8 @@ export function initForm({ lenis } = {}) {
     back.addEventListener('click', () => {
       if (back.hasAttribute('data-reset')) {
         form.reset();
+        attached.splice(0).forEach((a) => a.url && URL.revokeObjectURL(a.url));
+        renderFiles();
         setType(typeRadios.find((r) => r.checked)?.dataset.type);
       }
       form.classList.remove('is-sent');

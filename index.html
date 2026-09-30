@@ -442,11 +442,11 @@
           </dl>
         </div>
 
-        <form class="enquiry" action="mailto:info.reformsolutions@gmail.com" method="post" enctype="text/plain" novalidate data-reveal data-service="https://api.web3forms.com/submit">
-          <!-- Sending. With a Web3Forms access key in the field below (free, README → Enquiry form), enquiries are sent
-               in the background to info.reformsolutions@gmail.com and the visitor stays on the page. Without one, the
-               form opens the visitor's own email app with everything filled in (the mailto: action). -->
-          <input type="hidden" name="access_key" value="">
+        <form class="enquiry" action="mailto:info.reformsolutions@gmail.com" method="post" enctype="text/plain" novalidate data-reveal data-endpoint="">
+          <!-- Sending. With our Google Apps Script's web-app URL in data-endpoint above (free, README → Enquiry form),
+               enquiries and any photos or documents are sent in the background: emailed to info.reformsolutions@gmail.com,
+               files saved to Google Drive, a row added to a Google Sheet, and the visitor stays on the page. Without it,
+               the form opens the visitor's own email app with everything filled in (the mailto: action). -->
           <input class="enquiry__trap" type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" aria-hidden="true">
           <fieldset class="enquiry__intent">
             <legend class="mono">I’m looking to</legend>
@@ -545,26 +545,26 @@
 
           <label class="field"><span class="field__label mono">Message <b class="req" aria-hidden="true">*</b></span><textarea name="Message" rows="4" required placeholder="Which models or specs do you need? Any delivery timeline?"></textarea></label>
 
-          <!-- Photos (Sell tab): attached to the email, or sent on WhatsApp after a Web3Forms enquiry (its free plan
-               doesn't take files). The upload below is for a form service that does (README → Enquiry form). -->
+          <!-- Photos or documents (Sell tab): uploaded with the enquiry when it's sent in the background (Apps Script
+               or a form service); by email, the visitor attaches them to the email instead -->
           <fieldset class="enquiry__group" data-group="sell" disabled hidden>
             <div class="field upload-hint">
               <span class="field__label mono">Photos</span>
-              <p><svg class="upload__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span data-when="email">Have photos? Attach them to the email that opens when you press “Get a valuation”.</span><span data-when="sent" hidden>Have photos? Once you’ve sent this, you can send them to us on <a href="https://wa.me/918668145793?text=Hi%20Reform%20Solutions%2C%20here%20are%20photos%20for%20my%20enquiry." target="_blank" rel="noopener">WhatsApp</a>.</span></p>
+              <p><svg class="upload__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span>Have photos, or a list of the equipment? Attach them to the email that opens when you press “Get a valuation”.</span></p>
             </div>
             <div class="field upload" hidden>
-              <span class="field__label mono">Photos <em>(optional, up to 5)</em></span>
+              <span class="field__label mono">Photos or documents <em>(optional, up to 5)</em></span>
               <label class="upload__drop">
-                <input class="upload__picker" type="file" accept="image/*" multiple>
+                <input class="upload__picker" type="file" accept="image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" multiple>
                 <svg class="upload__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 16.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2.5M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5"/></svg>
-                <span><b class="upload__cta">Add photos</b><span class="upload__hint">Tap to choose, or drop them here. Large photos are resized before sending.</span></span>
+                <span><b class="upload__cta">Add photos or documents</b><span class="upload__hint">Photos, or a list of the equipment (PDF, Excel, Word, CSV). Tap to choose or drop them here — up to 10 MB each; large photos are resized before sending.</span></span>
               </label>
               <ul class="upload__list"></ul>
-              <input class="upload__slot" type="file" name="Photo 1" hidden>
-              <input class="upload__slot" type="file" name="Photo 2" hidden>
-              <input class="upload__slot" type="file" name="Photo 3" hidden>
-              <input class="upload__slot" type="file" name="Photo 4" hidden>
-              <input class="upload__slot" type="file" name="Photo 5" hidden>
+              <input class="upload__slot" type="file" name="File 1" hidden>
+              <input class="upload__slot" type="file" name="File 2" hidden>
+              <input class="upload__slot" type="file" name="File 3" hidden>
+              <input class="upload__slot" type="file" name="File 4" hidden>
+              <input class="upload__slot" type="file" name="File 5" hidden>
             </div>
           </fieldset>
 
@@ -578,16 +578,16 @@
             <div data-when="email">
               <p class="eyebrow">Enquiry ready</p>
               <h3 class="enquiry__done-title">Almost there — press send in your email app.</h3>
-              <p>A new email to <a href="mailto:info.reformsolutions@gmail.com">info.reformsolutions@gmail.com</a> has been filled in with everything you entered.<span class="enquiry__done-photos"> Attach your photos before you send it.</span></p>
+              <p>A new email to <a href="mailto:info.reformsolutions@gmail.com">info.reformsolutions@gmail.com</a> has been filled in with everything you entered.<span class="enquiry__done-photos"> Attach your photos or equipment list before you send it.</span></p>
               <p class="enquiry__done-help">Nothing opened? <a class="enquiry__retry" href="mailto:info.reformsolutions@gmail.com">Try again</a>, or <button class="link-btn enquiry__copy" type="button">copy your enquiry</button> and paste it into a new email to us. <span class="enquiry__copied" role="status" aria-live="polite"></span></p>
               <textarea class="enquiry__copy-text" rows="9" readonly hidden aria-label="Your enquiry"></textarea>
               <div><button class="btn btn--ghost enquiry__back" type="button"><span>Back to the form</span></button></div>
             </div>
-            <!-- sent in the background (Web3Forms) -->
+            <!-- sent in the background (Apps Script) -->
             <div data-when="sent" hidden>
               <p class="eyebrow">Enquiry sent</p>
               <h3 class="enquiry__done-title">Thanks — we’ve got your enquiry.</h3>
-              <p>We’ll get back to you by email or phone.<span class="enquiry__done-photos"> Have photos of the equipment? <a href="https://wa.me/918668145793?text=Hi%20Reform%20Solutions%2C%20here%20are%20photos%20for%20my%20enquiry." target="_blank" rel="noopener">Send them on WhatsApp</a>.</span></p>
+              <p>We’ll get back to you by email or phone.<span class="enquiry__done-photos"> Photos or an equipment list to add? <a href="https://wa.me/918668145793?text=Hi%20Reform%20Solutions%2C%20here%20are%20photos%20for%20my%20enquiry." target="_blank" rel="noopener">Send them on WhatsApp</a>.</span></p>
               <div><button class="btn btn--ghost enquiry__back" type="button" data-reset><span>Send another enquiry</span></button></div>
             </div>
           </div>

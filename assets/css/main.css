@@ -1065,6 +1065,10 @@ em { font-style: italic; }
 .upload__list:empty { display: none; }
 .upload__list li { position: relative; width: 76px; height: 76px; border-radius: 10px; overflow: hidden; background: var(--paper-3); box-shadow: inset 0 0 0 1px var(--line); }
 .upload__list img { width: 100%; height: 100%; object-fit: cover; }
+/* a document: its type and name on a wider tile */
+.upload__list li.is-doc { width: 172px; display: grid; align-content: center; gap: 3px; padding: 10px 30px 10px 12px; }
+.upload__doc-ext { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; color: var(--orange); }
+.upload__doc-name { font-size: 0.8rem; line-height: 1.25; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 .upload__remove {
   position: absolute;
   top: 4px;
@@ -1085,7 +1089,7 @@ em { font-style: italic; }
 .enquiry.is-sent > :not(.enquiry__done) { display: none !important; }
 .enquiry__done { display: grid; gap: 14px; justify-items: start; padding: 12px 0 8px; }
 .enquiry__done > :not([hidden]) { display: grid; gap: 14px; justify-items: start; }
-/* honeypot for bots (Web3Forms' botcheck): off-screen, never focused */
+/* honeypot for bots: off-screen, never focused */
 .enquiry__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .enquiry__done-title { font-family: var(--display); font-stretch: 112%; font-weight: 600; font-size: clamp(1.7rem, 2.6vw, 2.5rem); line-height: 1.05; letter-spacing: -0.035em; max-width: 18ch; }
 .enquiry__done p:not(.eyebrow) { color: var(--ink-soft); max-width: 52ch; }
