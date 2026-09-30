@@ -42,6 +42,32 @@ export function initNav({ lenis }) {
     });
   });
 
+  // The WhatsApp button (bottom right) turns cream over the dark sections, the same way, along a line
+  // through its middle.
+  const wa = document.querySelector('.wa');
+  let applyWa = () => {};
+  if (wa) {
+    const line = () => `bottom-=${Math.round(parseFloat(getComputedStyle(wa).bottom) + wa.offsetHeight / 2)}px`;
+    const darkUnder = new Set();
+    let storyUnderWa = true;
+    applyWa = () => wa.classList.toggle('is-on-dark', (darkStory && storyUnderWa) || darkUnder.size > 0);
+    const watch = (el, onToggle) =>
+      ScrollTrigger.create({ trigger: el, start: () => `top ${line()}`, end: () => `bottom ${line()}`, refreshPriority: -1, onToggle });
+    if (story) {
+      watch(story, (self) => {
+        storyUnderWa = self.isActive;
+        applyWa();
+      });
+    }
+    document.querySelectorAll('[data-theme="dark"]').forEach((el) =>
+      watch(el, (self) => {
+        if (self.isActive) darkUnder.add(el);
+        else darkUnder.delete(el);
+        applyWa();
+      })
+    );
+  }
+
   // Hide on scroll down, reveal on scroll up; solid once past the 3D story.
   // Measured on refresh only: reading layout in the scroll handler forced a reflow every frame.
   let lastY = 0;
@@ -90,6 +116,7 @@ export function initNav({ lenis }) {
     setStoryDark(v) {
       darkStory = v;
       applyTheme();
+      applyWa();
     },
     closeMenu: () => !menu.hidden && setMenu(false),
   };
@@ -261,7 +288,12 @@ export function initForm({ lenis } = {}) {
   const form = document.querySelector('.enquiry');
   if (!form) return;
   const action = (form.getAttribute('action') || '').trim();
-  const viaEmail = !/^https?:\/\//i.test(action);
+  // How an enquiry leaves: 'web3' (a Web3Forms access key in the form: sent in the background, the
+  // visitor stays on the page), 'post' (another form service's URL as the action: the form posts there,
+  // photos included), or 'email' (the mailto: action: the visitor's email app opens, all filled in).
+  const accessKey = (form.elements.namedItem('access_key')?.value || '').trim();
+  const mode = accessKey && form.dataset.service ? 'web3' : /^https?:\/\//i.test(action) ? 'post' : 'email';
+  const viaEmail = mode === 'email';
   const inbox = action.startsWith('mailto:')
     ? action.slice('mailto:'.length)
     : (document.querySelector('[data-contact="email"]')?.getAttribute('href') || '').replace('mailto:', '');
@@ -355,7 +387,8 @@ export function initForm({ lenis } = {}) {
     setNote(left.length ? `Please check: ${left.join(', ')}.` : '', left.length > 0);
   });
 
-  // ---- photos: uploaded only with a form service; by email they're attached to the email ----
+  // ---- photos: uploaded only to a form service that takes files ('post'); by email they're attached
+  // to the email, and after a Web3Forms enquiry (its free plan takes no files) they go on WhatsApp ----
   const upload = form.querySelector('.upload');
   const uploadHint = form.querySelector('.upload-hint');
   const picker = form.querySelector('.upload__picker');
@@ -372,9 +405,12 @@ export function initForm({ lenis } = {}) {
       return false;
     }
   })();
-  if (upload) upload.hidden = viaEmail;
-  if (uploadHint) uploadHint.hidden = !viaEmail;
-  if (viaEmail) slots.forEach((s) => (s.disabled = true));
+  if (upload) upload.hidden = mode !== 'post';
+  if (uploadHint) {
+    uploadHint.hidden = mode === 'post';
+    uploadHint.querySelectorAll('[data-when]').forEach((el) => (el.hidden = el.dataset.when !== (viaEmail ? 'email' : 'sent')));
+  }
+  if (mode !== 'post') slots.forEach((s) => (s.disabled = true));
   else if (picker && !canAssignFiles) {
     picker.name = 'Photos'; // older browsers: send the picked files as they are
     slots.forEach((s) => s.remove());
@@ -425,7 +461,7 @@ export function initForm({ lenis } = {}) {
     setNote(skipped ? `Up to ${MAX_PHOTOS} photos, ${MAX_PHOTO_MB} MB each — ${skipped} not added.` : '', skipped > 0);
   }
 
-  if (!viaEmail && picker && canAssignFiles) {
+  if (mode === 'post' && picker && canAssignFiles) {
     picker.addEventListener('change', () => {
       const files = [...picker.files];
       picker.value = '';
@@ -472,8 +508,10 @@ export function initForm({ lenis } = {}) {
     return lines.join('\n');
   }
 
-  function showDone() {
-    done.querySelector('.enquiry__done-photos').hidden = type !== 'sell';
+  // the confirmation: 'email' (handed to the email app) or 'sent' (sent in the background)
+  function showDone(kind) {
+    done.querySelectorAll('[data-when]').forEach((el) => (el.hidden = el.dataset.when !== kind));
+    done.querySelectorAll('.enquiry__done-photos').forEach((el) => (el.hidden = type !== 'sell'));
     form.classList.add('is-sent');
     done.hidden = false;
     refreshSoon();
@@ -483,19 +521,58 @@ export function initForm({ lenis } = {}) {
     done.focus({ preventScroll: true });
   }
 
+  // Web3Forms: the filled-in fields as form data (a plain cross-site post, so no preflight request),
+  // with the access key and a ticked honeypot among them; `email` doubles as the reply-to address.
+  // A failure keeps the form as it is and says how else to reach us.
+  let sending = false;
+  async function sendWeb3(subject) {
+    const body = new FormData();
+    for (const [name, raw] of new FormData(form)) {
+      const v = typeof raw === 'string' ? raw.trim() : '';
+      if (v && !name.startsWith('_')) body.append(name, v);
+    }
+    body.set('subject', subject);
+    body.set('from_name', 'Reform Solutions website');
+    sending = true;
+    submit.setAttribute('aria-busy', 'true');
+    submitLabel.textContent = 'Sending…';
+    setNote();
+    const stop = new AbortController();
+    const timer = setTimeout(() => stop.abort(), 20000);
+    try {
+      const res = await fetch(form.dataset.service, { method: 'POST', headers: { Accept: 'application/json' }, body, signal: stop.signal });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.success) throw new Error(out.body?.message || out.message || `HTTP ${res.status}`);
+      showDone('sent');
+    } catch (err) {
+      console.warn('[enquiry]', err);
+      const phone = document.querySelector('[data-contact="phone"]')?.textContent.trim();
+      setNote(`Sorry, that didn’t go through. Please try again, or email ${inbox}${phone ? ` or WhatsApp ${phone}` : ''}.`, true);
+    } finally {
+      clearTimeout(timer);
+      sending = false;
+      submit.removeAttribute('aria-busy');
+      submitLabel.textContent = ENQUIRY_TYPES[type].button;
+    }
+  }
+
   let lastEnquiry = '';
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (sending || !validate()) return;
     joinChoices();
     const subject = subjectLine();
+    if (mode === 'web3') {
+      sendWeb3(subject);
+      return;
+    }
     if (viaEmail) {
       const body = enquiryText();
       const href = `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.replace(/\n/g, '\r\n'))}`;
       lastEnquiry = `Subject: ${subject}\n\n${body}`;
       done.querySelector('.enquiry__retry').href = href;
       window.location.href = href;
-      showDone();
+      showDone('email');
       return;
     }
     if (field('_subject')) field('_subject').value = subject;
@@ -522,14 +599,21 @@ export function initForm({ lenis } = {}) {
       copied.textContent = 'Select the text below and copy it.';
     }
   });
-  done.querySelector('.enquiry__back').addEventListener('click', () => {
-    form.classList.remove('is-sent');
-    done.hidden = true;
-    copyArea.hidden = true;
-    copied.textContent = '';
-    refreshSoon();
-    typeRadios.find((r) => r.checked)?.focus({ preventScroll: true });
-  });
+  // back to the form: as it was (to try again), or cleared for another enquiry once one was sent
+  done.querySelectorAll('.enquiry__back').forEach((back) =>
+    back.addEventListener('click', () => {
+      if (back.hasAttribute('data-reset')) {
+        form.reset();
+        setType(typeRadios.find((r) => r.checked)?.dataset.type);
+      }
+      form.classList.remove('is-sent');
+      done.hidden = true;
+      copyArea.hidden = true;
+      copied.textContent = '';
+      refreshSoon();
+      typeRadios.find((r) => r.checked)?.focus({ preventScroll: true });
+    })
+  );
 
   // coming back via the browser's Back button after posting to a form service
   window.addEventListener('pageshow', () => {

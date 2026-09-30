@@ -11,7 +11,7 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
 | Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; for now it hands off to the visitor's email app (see Enquiry form below). |
-| WhatsApp | A "Chat on WhatsApp" button stays in the bottom-right corner (a round logo on phones) and opens a chat with +91 866 814 5793. The story's stage rail and the hero and footer bottom lines leave room for it (`--wa-w` in `main.css`). |
+| WhatsApp | A round WhatsApp button stays in the bottom-right corner, in the site's colours (navy, turning cream over dark sections); with a mouse it opens out to "Chat on WhatsApp" on hover. It opens a chat with +91 866 814 5793. The story's stage rail and the hero and footer bottom lines leave room for it (`--wa-w` in `main.css`). |
 | Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once and then stays formed (on touch screens once half of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
 
 ## Run it locally
@@ -70,6 +70,7 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 ## Things to fill in before launch
 
+- **Enquiry form:** add a free Web3Forms access key (see *Enquiry form* below) so enquiries arrive without the visitor's email app opening.
 - **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone and WhatsApp number is `+91 866 814 5793`: in the contact section and footer (`tel:` links), and in the WhatsApp button's link at the end of `index.html` (`wa.me/918668145793`, whose `text=` sets the chat's opening message).
 - **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
@@ -80,16 +81,30 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 The contact form has three tabs (Buy refurbished, Sell or retire assets, Something else), each with its own fields.
 
-**Now (no form service):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the button opens
-the visitor's own email app with a new email to that address, filled in with everything they entered (sellers are
-asked to attach photos there). A confirmation panel offers **Try again** and **Copy your enquiry** for visitors whose
-email app doesn't open.
+**Recommended: Web3Forms (free; the visitor stays on the page).** One-time setup:
 
-**Adding a form service later:** replace that `action` in `index.html` with the service's endpoint URL (for example
-FormSubmit, Formspree, Web3Forms or your own server). The form then posts directly (multipart), and the photo upload
-on the Sell tab switches itself on: up to 5 photos, resized in the browser to 1600px JPEGs and sent as `Photo 1` …
-`Photo 5`. If the service uses extra hidden fields (such as `_subject`, `_next` or `_captcha`), add them inside the
-form as its docs describe; a `_subject` field is filled in automatically.
+1. Go to [web3forms.com](https://web3forms.com), enter `info.reformsolutions@gmail.com` and create an access key. It
+   arrives by email.
+2. In `index.html`, find `<input type="hidden" name="access_key" value="">` and paste the key between the quotes.
+3. Push, then send yourself a test enquiry from the live site.
+
+From then on the button sends the enquiry in the background. It arrives in that inbox with the subject
+"Website enquiry: <type> — <company or name>", and replying goes straight to the visitor's email address. The visitor
+sees "Thanks — we've got your enquiry." on the page. If sending fails, the form stays filled in and suggests email
+or WhatsApp instead. The free plan covers 250 enquiries a month and doesn't take file attachments, so sellers are
+pointed to WhatsApp for photos (in the Sell tab and in the confirmation). The key is meant to be public: it can only
+send to your inbox. A hidden `botcheck` field catches simple spam bots.
+
+**Until a key is added (now):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the button
+opens the visitor's own email app with a new email to that address, filled in with everything they entered (sellers
+are asked to attach photos there). A confirmation panel offers **Try again** and **Copy your enquiry** for visitors
+whose email app doesn't open.
+
+**Another form service instead:** leave `access_key` empty and put the service's endpoint URL in the form's `action`.
+The form then posts to it (multipart; the visitor goes to the service's page unless it redirects back), and the photo
+upload on the Sell tab switches itself on: up to 5 photos, resized in the browser to 1600px JPEGs and sent as
+`Photo 1` … `Photo 5`. If the service uses extra hidden fields (such as `_subject`, `_next` or `_captcha`), add them
+inside the form as its docs describe; a `_subject` field is filled in automatically.
 
 Fields live in the `<form class="enquiry">` block of `index.html`; each field's `name` is the label used in the email.
 

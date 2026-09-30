@@ -53,7 +53,7 @@
   /* the fixed WhatsApp button (bottom right): its offset from the edges and width */
   --wa-x: calc(clamp(16px, 2vw, 28px) + env(safe-area-inset-right, 0px));
   --wa-y: calc(clamp(14px, 2vw, 24px) + env(safe-area-inset-bottom, 0px));
-  --wa-w: 206px;
+  --wa-w: 52px;
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 @supports (height: 1svh) {
@@ -1044,6 +1044,7 @@ em { font-style: italic; }
   line-height: 1.5;
 }
 .upload-hint .upload__icon { width: 20px; height: 20px; margin-top: 2px; }
+.upload-hint a { color: var(--ink); border-bottom: 1px solid var(--orange); }
 .upload__drop {
   position: relative;
   display: flex;
@@ -1083,6 +1084,9 @@ em { font-style: italic; }
 .enquiry__submit[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
 .enquiry.is-sent > :not(.enquiry__done) { display: none !important; }
 .enquiry__done { display: grid; gap: 14px; justify-items: start; padding: 12px 0 8px; }
+.enquiry__done > :not([hidden]) { display: grid; gap: 14px; justify-items: start; }
+/* honeypot for bots (Web3Forms' botcheck): off-screen, never focused */
+.enquiry__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .enquiry__done-title { font-family: var(--display); font-stretch: 112%; font-weight: 600; font-size: clamp(1.7rem, 2.6vw, 2.5rem); line-height: 1.05; letter-spacing: -0.035em; max-width: 18ch; }
 .enquiry__done p:not(.eyebrow) { color: var(--ink-soft); max-width: 52ch; }
 .enquiry__done a, .link-btn { color: var(--ink); border-bottom: 1px solid var(--orange); transition: color 0.3s; }
@@ -1153,7 +1157,8 @@ em { font-style: italic; }
 .footer__top svg { width: 14px; height: 14px; transform: rotate(-90deg); }
 
 /* ---------- Chat on WhatsApp (fixed, bottom right) ---------- */
-/* WhatsApp green, with the site's ink for the logo and label: white on this green is too faint to read */
+/* In the site's colours: an ink button with a cream WhatsApp logo, turning cream over the dark sections
+   (ui.js). With a mouse it opens out to "Chat on WhatsApp" on hover, and the logo turns orange. */
 .wa {
   position: fixed;
   right: var(--wa-x);
@@ -1161,22 +1166,28 @@ em { font-style: italic; }
   z-index: 40; /* over the page, under the nav and the open menu */
   display: flex;
   align-items: center;
-  gap: 10px;
   height: 52px;
-  padding: 0 20px 0 13px;
+  padding: 0 13px;
   border-radius: 999px;
-  background: #25d366;
-  color: var(--night);
+  background: var(--ink);
+  color: var(--paper);
   font-family: var(--sans);
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: -0.01em;
   white-space: nowrap;
-  box-shadow: 0 14px 30px -16px rgba(7, 44, 30, 0.6), 0 2px 8px rgba(27, 43, 59, 0.14);
-  transition: transform 0.5s var(--ease-out), opacity 0.5s var(--ease-out), box-shadow 0.3s;
+  box-shadow: 0 14px 30px -16px rgba(27, 43, 59, 0.6), 0 2px 8px rgba(27, 43, 59, 0.14);
+  transition: transform 0.5s var(--ease-out), opacity 0.5s var(--ease-out), background-color 0.35s, color 0.35s;
 }
-.wa:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -16px rgba(7, 44, 30, 0.7), 0 3px 10px rgba(27, 43, 59, 0.16); }
-.wa__icon { width: 26px; height: 26px; flex: none; }
+.wa.is-on-dark { background: var(--paper); color: var(--ink); box-shadow: 0 14px 30px -16px rgba(0, 0, 0, 0.7); }
+.wa__icon { width: 26px; height: 26px; flex: none; transition: color 0.3s; }
+/* folded away (still read out as the button's name) until hover or keyboard focus */
+.wa__label { max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.5s var(--ease-out), margin 0.5s var(--ease-out), opacity 0.3s; }
+.wa:focus-visible .wa__label { max-width: 12em; margin: 0 7px 0 10px; opacity: 1; }
+@media (hover: hover) {
+  .wa:hover .wa__label { max-width: 12em; margin: 0 7px 0 10px; opacity: 1; }
+  .wa:hover .wa__icon { color: var(--orange); }
+}
 /* comes in once the preloader has gone (main.js) */
 .js .wa:not(.is-in) { opacity: 0; transform: translateY(16px); pointer-events: none; }
 /* room for it at the right of the hero's footer line and the footer's last line */
@@ -1240,7 +1251,6 @@ em { font-style: italic; }
   :root { --wa-w: 50px; }
   .wa { width: 50px; height: 50px; padding: 0; justify-content: center; }
   .wa__icon { width: 27px; height: 27px; }
-  .wa__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); }
   .rail button { font-size: 0; gap: 0; justify-content: center; padding: 10px 0; }
   .rail button span { font-size: 0.6rem; }
 
