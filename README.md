@@ -70,7 +70,7 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 ## Things to fill in before launch
 
-- **Enquiry form:** set up the free Google Apps Script (see *Enquiry form* below) so enquiries, photos and documents arrive without the visitor's email app opening.
+- **Enquiry form:** connected to the Google Apps Script (see *Enquiry form* below). Send a test enquiry with a photo from the live site and check the email, the Sheet and the Drive folder.
 - **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone and WhatsApp number is `+91 866 814 5793`: in the contact section and footer (`tel:` links), and in the WhatsApp button's link at the end of `index.html` (`wa.me/918668145793`, whose `text=` sets the chat's opening message).
 - **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
@@ -103,14 +103,18 @@ One-time setup, signed in to Google as `info.reformsolutions@gmail.com`:
 6. In `index.html`, paste that URL between the quotes of `data-endpoint=""` on the `<form class="enquiry" …>` line.
    Push, then send yourself a test enquiry with a photo from the live site.
 
+The site is connected: `data-endpoint` holds the web app URL of the script deployed from `info.reformsolutions@gmail.com`.
+
 From then on the button sends the enquiry in the background and the visitor sees "Thanks — we've got your enquiry."
 on the page. On the Sell tab they can add photos (resized in the browser) or a list of the equipment (PDF, Excel,
-Word, CSV or text): up to 5 files, 10 MB each and 20 MB in all. If sending fails, the form stays filled in and suggests
-email or WhatsApp instead. A free Gmail account can send about 100 of these emails a day; beyond that the Sheet row
+Word, CSV or text): up to 5 files, 10 MB each and 20 MB in all. If sending fails, the form stays filled in and offers
+to send the same enquiry from the visitor's email app in one click (or WhatsApp). A free Gmail account can send about 100 of these emails a day; beyond that the Sheet row
 and the Drive files are still saved. A hidden `botcheck` field and a limit of 20 enquiries a minute keep simple spam
-out. After changing the script: **Deploy → Manage deployments → Edit → Version: New version**, so the URL stays the same.
+out. After a quiet spell Google takes several seconds to start the script, so the form wakes it (with the harmless
+"ready" request) as soon as someone starts filling it in; if Google is still slow to answer, the form says it's still
+sending. After changing the script: **Deploy → Manage deployments → Edit → Version: New version**, so the URL stays the same.
 
-**Until the script is set up (now):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the
+**Without the script (`data-endpoint` empty):** the form's `action` is `mailto:info.reformsolutions@gmail.com`. Pressing the
 button opens the visitor's own email app with a new email to that address, filled in with everything they entered
 (sellers are asked to attach photos or their equipment list there). A confirmation panel offers **Try again** and
 **Copy your enquiry** for visitors whose email app doesn't open.

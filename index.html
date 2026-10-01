@@ -571,6 +571,8 @@
           <div class="enquiry__foot">
             <button class="btn enquiry__submit" type="submit"><span>Request a quote</span><svg class="btn__icon" aria-hidden="true"><use href="#arrow"/></svg></button>
             <p class="enquiry__note mono" role="status" aria-live="polite"><b class="req" aria-hidden="true">*</b> Required · Opens your email app with everything filled in.</p>
+            <!-- shown if sending in the background fails: the same enquiry, handed to the email app -->
+            <p class="enquiry__fallback" hidden><button class="link-btn" type="button">Send it from my email app instead</button></p>
           </div>
 
           <div class="enquiry__done" tabindex="-1" hidden>

@@ -548,14 +548,22 @@ export function initForm({ lenis } = {}) {
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
+  // After a quiet spell the script takes several seconds to start, so it's woken (its harmless GET)
+  // as soon as someone starts on the form; by the time they send, it answers in about a second.
+  if (mode === 'script') {
+    form.addEventListener('focusin', () => fetch(endpoint, { mode: 'no-cors', cache: 'no-store' }).catch(() => {}), { once: true });
+  }
   let sending = false;
   async function sendToScript(subject) {
     sending = true;
     submit.setAttribute('aria-busy', 'true');
     submitLabel.textContent = attached.length ? 'Uploading…' : 'Sending…';
     setNote();
+    if (fallback) fallback.hidden = true;
     const stop = new AbortController();
     const timer = setTimeout(() => stop.abort(), 90000);
+    // Google sometimes takes a while to answer: say so, rather than leave the button looking stuck
+    const slow = setTimeout(() => setNote('Still sending — this can take up to a minute.'), 8000);
     try {
       const fields = {};
       for (const [name, raw] of new FormData(form)) {
@@ -575,9 +583,11 @@ export function initForm({ lenis } = {}) {
     } catch (err) {
       console.warn('[enquiry]', err);
       const phone = document.querySelector('[data-contact="phone"]')?.textContent.trim();
-      setNote(`Sorry, that didn’t go through. Please try again, or email ${inbox}${phone ? ` or WhatsApp ${phone}` : ''}.`, true);
+      setNote(`Sorry, that didn’t go through. Please try again, or send it from your email app below${phone ? ` (or WhatsApp us on ${phone})` : ''}.`, true);
+      if (fallback) fallback.hidden = false;
     } finally {
       clearTimeout(timer);
+      clearTimeout(slow);
       sending = false;
       submit.removeAttribute('aria-busy');
       submitLabel.textContent = ENQUIRY_TYPES[type].button;
@@ -585,6 +595,20 @@ export function initForm({ lenis } = {}) {
   }
 
   let lastEnquiry = '';
+  // hand the enquiry to the visitor's email app, everything filled in
+  function sendByEmail(subject) {
+    const body = enquiryText();
+    const href = `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.replace(/\n/g, '\r\n'))}`;
+    lastEnquiry = `Subject: ${subject}\n\n${body}`;
+    done.querySelector('.enquiry__retry').href = href;
+    window.location.href = href;
+    showDone('email');
+  }
+  const fallback = form.querySelector('.enquiry__fallback');
+  fallback?.querySelector('button').addEventListener('click', () => {
+    fallback.hidden = true;
+    sendByEmail(subjectLine());
+  });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (sending || !validate()) return;
@@ -595,12 +619,7 @@ export function initForm({ lenis } = {}) {
       return;
     }
     if (viaEmail) {
-      const body = enquiryText();
-      const href = `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.replace(/\n/g, '\r\n'))}`;
-      lastEnquiry = `Subject: ${subject}\n\n${body}`;
-      done.querySelector('.enquiry__retry').href = href;
-      window.location.href = href;
-      showDone('email');
+      sendByEmail(subject);
       return;
     }
     if (field('_subject')) field('_subject').value = subject;

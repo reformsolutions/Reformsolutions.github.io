@@ -986,6 +986,7 @@ em { font-style: italic; }
 .enquiry__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; margin-top: 8px; }
 .enquiry__note { color: var(--ink-mute); font-size: 0.64rem; }
 .enquiry__note.is-error { color: #b5452b; }
+.enquiry__fallback { flex-basis: 100%; margin-top: -8px; font-size: 0.95rem; }
 
 /* Required marker; anything hidden inside the form stays hidden */
 .req { color: var(--orange); font-weight: 500; }
