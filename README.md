@@ -10,7 +10,7 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | Hero → Process | A procedurally built 3D laptop (Three.js) is followed through the bench: sourcing, inspection (scan line), hardware testing (exploded view), data sanitization (SSD wipe), cleaning (brush pass), grading (stamp) and QC. The camera then dives into the laptop's screen, and the next section's heading rises onto it (the dark section slides up under the dive with a see-through top). |
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
-| Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; for now it hands off to the visitor's email app (see Enquiry form below). |
+| Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; it sends them through a Google Apps Script (see Enquiry form below). |
 | WhatsApp | A round WhatsApp button stays in the bottom-right corner, in the site's colours (navy, turning cream over dark sections); with a mouse it opens out to "Chat on WhatsApp" on hover. It opens a chat with +91 866 814 5793. The story's stage rail and the hero and footer bottom lines leave room for it (`--wa-w` in `main.css`). |
 | Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once and then stays formed (on touch screens once half of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
 
@@ -27,10 +27,46 @@ Test locally before pushing — GitHub Pages publishes whatever is on `main` wit
 
 ## Publishing
 
-The site is live at https://reformsolutions.github.io/ (GitHub Pages, deployed from `main`, root folder).
-Push to `main` and the site updates automatically. `.nojekyll` makes GitHub serve every file untouched.
-For a custom domain, add a `CNAME` file containing the domain and point your DNS at GitHub Pages;
-then update the canonical/`og:` URLs at the top of `index.html`.
+The site's address is https://reformsolutions.in/ (GitHub Pages, deployed from `main`, root folder); the old
+https://reformsolutions.github.io/ address forwards there. Push to `main` and the site updates automatically.
+`.nojekyll` makes GitHub serve every file untouched.
+
+The domain is set by the `CNAME` file (the same setting as the repo's **Settings → Pages → Custom domain**). It is
+registered at GoDaddy, and its DNS records there must point at GitHub Pages (GoDaddy's default "Parked" `@` records
+removed):
+
+| Type | Name | Value |
+| --- | --- | --- |
+| A | @ | 185.199.108.153 |
+| A | @ | 185.199.109.153 |
+| A | @ | 185.199.110.153 |
+| A | @ | 185.199.111.153 |
+| CNAME | www | reformsolutions.github.io |
+
+Once GitHub's DNS check passes, tick **Enforce HTTPS** in Settings → Pages. If the domain ever changes, update
+`CNAME`, `robots.txt`, `sitemap.xml` and the addresses at the top of `index.html` (canonical, `og:` tags and the
+structured data).
+
+## Search engines
+
+- The top of `index.html` has the title, description, canonical address and the social-preview (`og:`) tags, plus
+  structured data (the `application/ld+json` block) giving search engines the company name, logo
+  (`assets/img/logo.png`), email and phone. When the contact details change, change them there too.
+- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists the page. After a
+  real content change, update `<lastmod>` in `sitemap.xml`; add a `<url>` block for any new page.
+- `favicon.ico` at the root is for crawlers and apps that look for the icon there; pages use `assets/img/favicon.svg`.
+- The 404 page is marked `noindex`, so it never shows up in search results.
+
+Getting into Google (once the domain works), signed in as `info.reformsolutions@gmail.com`:
+
+1. [Google Search Console](https://search.google.com/search-console) → **Add property → Domain** → `reformsolutions.in`.
+   Google shows a TXT record: add it in GoDaddy's DNS for the domain, then click **Verify**.
+2. **Sitemaps** → enter `sitemap.xml` → **Submit**.
+3. **URL inspection** → `https://reformsolutions.in/` → **Request indexing**.
+
+Then in [Bing Webmaster Tools](https://www.bing.com/webmasters), import the site from Search Console (Bing's results
+also appear on Yahoo and DuckDuckGo). For local searches and Google Maps, set up a free
+[Google Business Profile](https://www.google.com/business/).
 
 ## How the 3D stays out of the way of the text
 
@@ -140,6 +176,9 @@ assets/js/ui.js            nav, menu, reveals, FAQ, form, sustainability loop
 assets/img/brand.svg       vector logo (traced from the original artwork) used across the site
 vendor/                    three.js r186 (trimmed), GSAP 3.15 (+ plugins), Lenis 1.3 — see vendor/README.md
 google-apps-script/        the enquiry form's backend (paste into Google Apps Script; see Enquiry form)
+CNAME                      the custom domain (see Publishing)
+robots.txt, sitemap.xml    for search engines (see Search engines)
+favicon.ico                the icon for crawlers and apps that look for it at the root
 serve.mjs                  local preview server (not needed on GitHub Pages)
 ```
 

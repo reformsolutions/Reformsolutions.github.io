@@ -1,0 +1,5 @@
+# Search engines may crawl the whole site; sitemap.xml lists its pages.
+User-agent: *
+Allow: /
+
+Sitemap: https://reformsolutions.in/sitemap.xml
