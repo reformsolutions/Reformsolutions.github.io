@@ -122,12 +122,17 @@ export function initNav({ lenis }) {
   };
 }
 
+// Links to a part of this page (#faq, or /#faq on the home page) scroll there smoothly;
+// links to other pages load as usual.
 export function initAnchors({ lenis, nav }) {
   document.addEventListener('click', (e) => {
-    const a = e.target.closest('a[href^="#"]');
+    const a = e.target.closest('a[href*="#"]');
     if (!a) return;
-    const id = a.getAttribute('href');
-    const target = id === '#top' ? 0 : document.querySelector(id);
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || url.search !== location.search) return;
+    const id = url.hash;
+    if (id.length < 2) return;
+    const target = id === '#top' ? 0 : document.getElementById(decodeURIComponent(id.slice(1)));
     if (target === null) return;
     e.preventDefault();
     nav.closeMenu();
@@ -346,6 +351,9 @@ export function initForm({ lenis } = {}) {
     refreshSoon();
   }
   typeRadios.forEach((r) => r.addEventListener('change', () => r.checked && setType(r.dataset.type)));
+  // links can open a tab: /contact/?type=sell
+  const asked = typeRadios.find((r) => r.dataset.type === new URLSearchParams(location.search).get('type'));
+  if (asked) asked.checked = true;
   setType(typeRadios.find((r) => r.checked)?.dataset.type);
 
   // ---- validation ----
@@ -651,6 +659,7 @@ export function initForm({ lenis } = {}) {
     back.addEventListener('click', () => {
       if (back.hasAttribute('data-reset')) {
         form.reset();
+        if (asked) asked.checked = true;
         attached.splice(0).forEach((a) => a.url && URL.revokeObjectURL(a.url));
         renderFiles();
         setType(typeRadios.find((r) => r.checked)?.dataset.type);

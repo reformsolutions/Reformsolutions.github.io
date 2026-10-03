@@ -1,9 +1,29 @@
 # Reform Solutions — website
 
-A single-page, scroll-driven site for Reform Solutions (IT asset refurbishment & lifecycle management).
+A scroll-driven site for Reform Solutions (IT asset refurbishment & lifecycle management): a home page that tells
+the story in 3D, and four pages that go into detail.
 It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 
-## What's on the page
+## Pages
+
+| Page | Address | What it's for |
+| --- | --- | --- |
+| Home | `/` (`index.html`) | The story: one laptop across the bench in 3D, then every section in brief. Each section links on to its page. |
+| Process | `/process/` | The seven refurbishment stages in full. A cable runs down beside them and its plug stops at each stage's node as it comes up the screen (`sections/stages.js`). |
+| Equipment | `/equipment/` | The six kinds of hardware, each with its line drawing, then grading, volume, warranty and who buys. |
+| For business | `/business/` | Selling or retiring IT (IT asset disposal): the same cable route as the home page opens the page, then what we take, data, getting a valuation, sustainability and questions. |
+| Contact | `/contact/` | Email, phone, WhatsApp and the enquiry form. `/contact/?type=sell` (or `buy`, `other`) opens that tab of the form. |
+
+The inner pages share the home page's styles, nav, footer and WhatsApp button, and start with `assets/js/page.js`
+(no 3D bench, no preloader), so they load quickly. Moving between pages cross-fades in browsers that support it.
+Each page is its own HTML file, so blocks used on several pages are repeated in each:
+
+- the nav, mobile menu, footer, WhatsApp button and the symbols at the top of `<body>`: in all five pages;
+- the enquiry form: in `index.html` and `contact/index.html` (keep the two the same);
+- copy that also appears on the home page (process stages, equipment, grades, the business route, FAQ answers,
+  clients, principles, sustainability): change it on every page that shows it. Search the folder for a phrase.
+
+## What's on the home page
 
 | Section | What happens |
 | --- | --- |
@@ -49,11 +69,15 @@ structured data).
 
 ## Search engines
 
-- The top of `index.html` has the title, description, canonical address and the social-preview (`og:`) tags, plus
-  structured data (the `application/ld+json` block) giving search engines the company name, logo
-  (`assets/img/logo.png`), email and phone. When the contact details change, change them there too.
-- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists the page. After a
-  real content change, update `<lastmod>` in `sitemap.xml`; add a `<url>` block for any new page.
+- Every page has its own title, description, canonical address (its own URL) and social-preview (`og:`) tags at the
+  top, and one `h1`. Each page answers a different search: the process, refurbished equipment, selling or
+  retiring IT, and getting in touch.
+- Structured data (the `application/ld+json` blocks): on the home page, the company name, logo
+  (`assets/img/logo.png`), email and phone (when the contact details change, change them there too); on the other
+  pages, where the page sits in the site (Home › Process), which Google can show in results.
+- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists all five pages.
+  After a real content change, update that page's `<lastmod>`; add a `<url>` block for any new page.
+- Pages link to each other (nav, footer, the home page's "more" links), so search engines find them all.
 - `favicon.ico` at the root is for crawlers and apps that look for the icon there; pages use `assets/img/favicon.svg`.
 - The 404 page is marked `noindex`, so it never shows up in search results.
 
@@ -107,7 +131,7 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 ## Things to fill in before launch
 
 - **Enquiry form:** connected to the Google Apps Script (see *Enquiry form* below). Send a test enquiry with a photo from the live site and check the email, the Sheet and the Drive folder.
-- **Contact details:** the email is `info.reformsolutions@gmail.com` (contact section, footer and the enquiry form's `action`). The phone and WhatsApp number is `+91 866 814 5793`: in the contact section and footer (`tel:` links), and in the WhatsApp button's link at the end of `index.html` (`wa.me/918668145793`, whose `text=` sets the chat's opening message).
+- **Contact details:** the email is `info.reformsolutions@gmail.com` (the home page's contact section, the contact page, every page's footer, the enquiry form's `action` and the structured data in `index.html`). The phone and WhatsApp number is `+91 866 814 5793`: in the same places (`tel:` links), in the WhatsApp button's link at the end of every page (`wa.me/918668145793`, whose `text=` sets the chat's opening message), and on the For business page (its WhatsApp and call buttons). Search the folder for `8668145793` to find them all.
 - **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
 - **Demo data:** the numbers on the laptop's screen and callouts (91% battery, 77/77 keys, and so on) are illustrative sample readings for the demo unit "Serial No. 2231", not company statistics. (Avoid an "RS-" prefix for IDs: in India it reads as a rupee price.)
@@ -136,10 +160,10 @@ One-time setup, signed in to Google as `info.reformsolutions@gmail.com`:
    you, keep files in your Drive and edit this spreadsheet.
 5. Copy the **Web app URL** (it ends in `/exec`). Opening it in a browser should show "Reform Solutions enquiry form:
    ready."
-6. In `index.html`, paste that URL between the quotes of `data-endpoint=""` on the `<form class="enquiry" …>` line.
+6. In `index.html` and `contact/index.html`, paste that URL between the quotes of `data-endpoint=""` on the `<form class="enquiry" …>` line.
    Push, then send yourself a test enquiry with a photo from the live site.
 
-The site is connected: `data-endpoint` holds the web app URL of the script deployed from `info.reformsolutions@gmail.com`.
+The site is connected: `data-endpoint` (in both files) holds the web app URL of the script deployed from `info.reformsolutions@gmail.com`.
 
 From then on the button sends the enquiry in the background and the visitor sees "Thanks — we've got your enquiry."
 on the page. On the Sell tab they can add photos (resized in the browser) or a list of the equipment (PDF, Excel,
@@ -161,18 +185,22 @@ the file box on the Sell tab switches itself on, sending `File 1` … `File 5`. 
 (such as `_subject`, `_next` or `_captcha`), add them inside the form as its docs describe; a `_subject` field is
 filled in automatically.
 
-Fields live in the `<form class="enquiry">` block of `index.html`; each field's `name` is the label used in the email.
+Fields live in the `<form class="enquiry">` block of `index.html` and `contact/index.html` (change both); each
+field's `name` is the label used in the email.
 
 ## Where things live
 
 ```
-index.html                 all content and copy
-assets/css/main.css        design system, layout, responsive rules
-assets/js/main.js          boot sequence
+index.html                 the home page: all its content and copy
+process/, equipment/,      the inner pages (each an index.html, served at /process/ and so on)
+business/, contact/
+assets/css/main.css        design system, layout, responsive rules (inner pages near the end)
+assets/js/main.js          home page boot sequence
+assets/js/page.js          inner pages' boot sequence
 assets/js/story.js         scroll timeline for the 3D bench (stage timings, cameras, callouts)
 assets/js/bench/           3D scene: laptop model, screen UI, procedural textures, renderer
-assets/js/sections/        equipment track + isometric art, business route, footer particles
-assets/js/ui.js            nav, menu, reveals, FAQ, form, sustainability loop
+assets/js/sections/        equipment track + isometric art, business route, process stages, footer particles
+assets/js/ui.js            nav, menu, links, reveals, FAQ, form, sustainability loop
 assets/img/brand.svg       vector logo (traced from the original artwork) used across the site
 vendor/                    three.js r186 (trimmed), GSAP 3.15 (+ plugins), Lenis 1.3 — see vendor/README.md
 google-apps-script/        the enquiry form's backend (paste into Google Apps Script; see Enquiry form)

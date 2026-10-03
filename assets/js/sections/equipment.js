@@ -38,6 +38,23 @@ function drawIn(card, reduced) {
   });
 }
 
+// Render a card's line drawing, hidden until it draws in.
+function renderArt(card) {
+  const holder = card.querySelector('[data-art]');
+  const make = holder && ART[holder.dataset.art];
+  if (!make) return;
+  holder.innerHTML = make();
+  gsap.set(holder.querySelectorAll('polygon, polyline'), { strokeDasharray: 1, strokeDashoffset: 1, fillOpacity: 0 });
+}
+
+// The equipment page: each category's drawing draws in as it comes into view.
+export function initArt({ reduced }) {
+  document.querySelectorAll('.cat').forEach((card) => {
+    renderArt(card);
+    ScrollTrigger.create({ trigger: card, start: 'top 75%', once: true, onEnter: () => drawIn(card, reduced) });
+  });
+}
+
 export function initEquipment({ reduced }) {
   const section = document.querySelector('.equipment');
   if (!section) return;
@@ -48,14 +65,7 @@ export function initEquipment({ reduced }) {
   const cards = [...section.querySelectorAll('.eq-card')];
 
   // Render the line drawings, hidden until they draw in.
-  for (const card of cards) {
-    const holder = card.querySelector('[data-art]');
-    const make = ART[holder.dataset.art];
-    if (!make) continue;
-    holder.innerHTML = make();
-    const lines = holder.querySelectorAll('polygon, polyline');
-    gsap.set(lines, { strokeDasharray: 1, strokeDashoffset: 1, fillOpacity: 0 });
-  }
+  cards.forEach(renderArt);
 
   const mm = gsap.matchMedia();
   mm.add('(min-width: 900px)', () => {
