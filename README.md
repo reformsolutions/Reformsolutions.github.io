@@ -32,7 +32,7 @@ Each page is its own HTML file, so blocks used on several pages are repeated in 
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
 | Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; it sends them through a Google Apps Script (see Enquiry form below). |
 | WhatsApp | A round WhatsApp button stays in the bottom-right corner, in the site's colours (navy, turning cream over dark sections); with a mouse it opens out to "Chat on WhatsApp" on hover. It opens a chat with +91 866 814 5793. The story's stage rail and the hero and footer bottom lines leave room for it (`--wa-w` in `main.css`). |
-| Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once and then stays formed (on touch screens once half of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
+| Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once, in under a second, and then stays formed (on touch screens once a third of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
 
 ## Run it locally
 

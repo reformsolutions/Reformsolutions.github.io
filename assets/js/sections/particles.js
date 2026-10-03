@@ -1,12 +1,15 @@
 // Footer: the RS monogram as particles. They start as scattered debris and gather into the
-// logo once, over a couple of seconds, when the footer comes into view (on touch screens once
-// half of it is on screen, so the build is seen), then stay formed. The cursor pushes them
-// apart; on touch, a tap scatters the ones around it and a sideways drag sweeps through them.
+// logo once, in under a second, as the footer comes into view (on touch screens once a third
+// of it is on screen, so the build is seen), then stay formed. The cursor pushes them apart;
+// on touch, a tap scatters the ones around it and a sideways drag sweeps through them.
 // The loop sleeps once everything has settled and wakes on pointer movement.
 import { MARK } from '../brand-paths.js';
 
-const STAGGER = 0.4; // particles set off at different moments across the first 40% of the build
-const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const BUILD = 1.2; // seconds from debris to logo (most of it is in place after 0.6s)
+const STAGGER = 0.25; // particles set off at different moments across the first quarter of the build
+// Each particle leaves at once and slows as it lands (an ease-in here read as a pause before
+// anything moved).
+const ease = (t) => 1 - (1 - t) ** 4;
 
 export function initParticles({ reduced }) {
   const canvas = document.querySelector('.footer__particles');
@@ -199,7 +202,7 @@ export function initParticles({ reduced }) {
 
   if (reduced) return;
   let started = false;
-  const startAt = touch ? 0.5 : 0.15;
+  const startAt = touch ? 0.35 : 0.15;
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
     if (!visible) return;
@@ -208,8 +211,9 @@ export function initParticles({ reduced }) {
       started = true;
       gsap.to({ v: form }, {
         v: 1,
-        duration: 2.2,
-        ease: 'power2.inOut',
+        duration: BUILD,
+        ease: 'none', // the pace comes from each particle's own ease
+
         onUpdate() {
           form = this.targets()[0].v;
         },
