@@ -3,12 +3,17 @@
      add a <url> block for any new page. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+<<<<<<< HEAD
     <loc>https://reformsolutions.in/</loc>
     <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://reformsolutions.in/about/</loc>
     <lastmod>2026-10-04</lastmod>
+=======
+    <loc>https://reformsolutions.in/index</loc>
+    <lastmod>2026-10-03</lastmod>
+>>>>>>> ecbc72ce365ff00d92861162e31b9155a6646628
   </url>
   <url>
     <loc>https://reformsolutions.in/process/</loc>
