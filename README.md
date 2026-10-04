@@ -1,7 +1,7 @@
 # Reform Solutions — website
 
 A scroll-driven site for Reform Solutions (IT asset refurbishment & lifecycle management): a home page that tells
-the story in 3D, and four pages that go into detail.
+the story in 3D, and five pages that go into detail.
 It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 
 ## Pages
@@ -12,16 +12,22 @@ It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 | Process | `/process/` | The seven refurbishment stages in full. A cable runs down beside them and its plug stops at each stage's node as it comes up the screen (`sections/stages.js`). |
 | Equipment | `/equipment/` | The six kinds of hardware, each with its line drawing, then grading, volume, warranty and who buys. |
 | For business | `/business/` | Selling or retiring IT (IT asset disposal): the same cable route as the home page opens the page, then what we take, data, getting a valuation, sustainability and questions. |
+| About | `/about/` | Who Reform Solutions is: what we do (supply, refurbish, retire), why, the company at a glance (name, what, where, equipment, who for, contact), how we work and who we work with. It carries the company's details for search engines too (see Search engines). |
 | Contact | `/contact/` | Email, phone, WhatsApp and the enquiry form. `/contact/?type=sell` (or `buy`, `other`) opens that tab of the form. |
+
+The nav links to Process, Equipment, For business, About and FAQ; Sustainability and Contact are in the footer
+(and "Get a quote" opens the contact page).
 
 The inner pages share the home page's styles, nav, footer and WhatsApp button, and start with `assets/js/page.js`
 (no 3D bench, no preloader), so they load quickly. Moving between pages cross-fades in browsers that support it.
 Each page is its own HTML file, so blocks used on several pages are repeated in each:
 
-- the nav, mobile menu, footer, WhatsApp button and the symbols at the top of `<body>`: in all five pages;
+- the nav, mobile menu, footer, WhatsApp button and the symbols at the top of `<body>`: in all six pages;
 - the enquiry form: in `index.html` and `contact/index.html` (keep the two the same);
+- the company's details for search engines (the `Organization` entry): in `index.html` and `about/index.html`;
 - copy that also appears on the home page (process stages, equipment, grades, the business route, FAQ answers,
-  clients, principles, sustainability): change it on every page that shows it. Search the folder for a phrase.
+  clients, principles, sustainability, the About figures): change it on every page that shows it. Search the
+  folder for a phrase.
 
 ## What's on the home page
 
@@ -30,6 +36,7 @@ Each page is its own HTML file, so blocks used on several pages are repeated in 
 | Hero → Process | A procedurally built 3D laptop (Three.js) is followed through the bench: sourcing, inspection (scan line), hardware testing (exploded view), data sanitization (SSD wipe), cleaning (brush pass), grading (stamp) and QC. The camera then dives into the laptop's screen, and the next section's heading rises onto it (the dark section slides up under the dive with a see-through top). |
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
+| About | Who Reform Solutions is, in a paragraph that names the company and what it does (search engines read this), with four figures underneath (6 kinds of hardware, 7 stages, 3 grades, 1 standard) and a link to the About page. |
 | Clients, principles, sustainability, FAQ, contact | Editorial sections with quiet reveals. The contact form has tabs for buying, selling and other enquiries; it sends them through a Google Apps Script (see Enquiry form below). |
 | WhatsApp | A round WhatsApp button stays in the bottom-right corner, in the site's colours (navy, turning cream over dark sections); with a mouse it opens out to "Chat on WhatsApp" on hover. It opens a chat with +91 866 814 5793. The story's stage rail and the hero and footer bottom lines leave room for it (`--wa-w` in `main.css`). |
 | Footer | The RS monogram as particles that re-form from scattered "debris" and scatter away from the cursor. It builds once, in under a second, and then stays formed (on touch screens once a third of it is on screen, so the build is seen); on touch, a tap scatters the particles around the finger and a sideways drag sweeps through them. |
@@ -70,23 +77,30 @@ structured data).
 ## Search engines
 
 - Every page has its own title, description, canonical address (its own URL) and social-preview (`og:`) tags at the
-  top, and one `h1`. Each page answers a different search: the process, refurbished equipment, selling or
-  retiring IT, and getting in touch.
-- Structured data (the `application/ld+json` blocks): on the home page, the company name, logo
-  (`assets/img/logo.png`), email and phone (when the contact details change, change them there too); on the other
-  pages, where the page sits in the site (Home › Process), which Google can show in results.
-- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists all five pages.
+  top, and one `h1`. Each page answers a different search: the company itself (home, About), the process,
+  refurbished equipment, selling or retiring IT, and getting in touch.
+- The company's name comes first wherever people search for it: the home page's title and description start with
+  "Reform Solutions", and the home page's About section and the About page say in plain words what the company is,
+  does and where it's based.
+- Structured data (the `application/ld+json` blocks): on the home page and the About page, the company name, slogan,
+  logo (`assets/img/logo.png`), description, email, phone and country (when any of these change, change them in both
+  files); on the other pages, where the page sits in the site (Home › Process), which Google can show in results.
+  When the company has profiles elsewhere (Google Business Profile, LinkedIn, IndiaMART…), list their addresses in a
+  `"sameAs": [ … ]` line in that entry, so search engines connect them to the site.
+- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists all six pages.
   After a real content change, update that page's `<lastmod>`; add a `<url>` block for any new page.
 - Pages link to each other (nav, footer, the home page's "more" links), so search engines find them all.
+- `googleb504f5b93f3b3496.html` proves to Google Search Console that the site is ours: keep it.
 - `favicon.ico` at the root is for crawlers and apps that look for the icon there; pages use `assets/img/favicon.svg`.
 - The 404 page is marked `noindex`, so it never shows up in search results.
 
-Getting into Google (once the domain works), signed in as `info.reformsolutions@gmail.com`:
+Getting into Google, signed in to [Google Search Console](https://search.google.com/search-console) as
+`info.reformsolutions@gmail.com` (the site is verified there with the HTML file above):
 
-1. [Google Search Console](https://search.google.com/search-console) → **Add property → Domain** → `reformsolutions.in`.
-   Google shows a TXT record: add it in GoDaddy's DNS for the domain, then click **Verify**.
-2. **Sitemaps** → enter `sitemap.xml` → **Submit**.
-3. **URL inspection** → `https://reformsolutions.in/` → **Request indexing**.
+1. **Sitemaps** → enter `sitemap.xml` → **Submit**.
+2. **URL inspection** → `https://reformsolutions.in/` → **Request indexing**. Do the same for `/about/`, and for
+   any page whose content changes a lot.
+3. Check **Pages** after a few days to see which pages Google has indexed, and why any it hasn't.
 
 Then in [Bing Webmaster Tools](https://www.bing.com/webmasters), import the site from Search Console (Bing's results
 also appear on Yahoo and DuckDuckGo). For local searches and Google Maps, set up a free
@@ -131,7 +145,7 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 ## Things to fill in before launch
 
 - **Enquiry form:** connected to the Google Apps Script (see *Enquiry form* below). Send a test enquiry with a photo from the live site and check the email, the Sheet and the Drive folder.
-- **Contact details:** the email is `info.reformsolutions@gmail.com` (the home page's contact section, the contact page, every page's footer, the enquiry form's `action` and the structured data in `index.html`). The phone and WhatsApp number is `+91 866 814 5793`: in the same places (`tel:` links), in the WhatsApp button's link at the end of every page (`wa.me/918668145793`, whose `text=` sets the chat's opening message), and on the For business page (its WhatsApp and call buttons). Search the folder for `8668145793` to find them all.
+- **Contact details:** the email is `info.reformsolutions@gmail.com` (the home page's contact section, the contact page, the About page, every page's footer, the enquiry form's `action` and the structured data in `index.html` and `about/index.html`). The phone and WhatsApp number is `+91 866 814 5793`: in the same places (`tel:` links), in the WhatsApp button's link at the end of every page (`wa.me/918668145793`, whose `text=` sets the chat's opening message), and on the For business page (its WhatsApp and call buttons). Search the folder for `8668145793` to find them all.
 - **Recycling wording:** Reform Solutions doesn't recycle in-house. Equipment that can't be reused is handed to recyclers in its partner network, so keep all copy consistent with that (no promises about what happens after hand-off).
 - **Claims to confirm:** the process copy describes drive wiping as "overwrite + verification, logged per device" and mentions warranty terms confirmed per quote. Adjust these to match exactly what you do. Add any certifications you hold (for example R2 or ISO 14001).
 - **Demo data:** the numbers on the laptop's screen and callouts (91% battery, 77/77 keys, and so on) are illustrative sample readings for the demo unit "Serial No. 2231", not company statistics. (Avoid an "RS-" prefix for IDs: in India it reads as a rupee price.)
@@ -193,7 +207,7 @@ field's `name` is the label used in the email.
 ```
 index.html                 the home page: all its content and copy
 process/, equipment/,      the inner pages (each an index.html, served at /process/ and so on)
-business/, contact/
+business/, about/, contact/
 assets/css/main.css        design system, layout, responsive rules (inner pages near the end)
 assets/js/main.js          home page boot sequence
 assets/js/page.js          inner pages' boot sequence
