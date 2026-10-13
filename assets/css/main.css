@@ -495,6 +495,80 @@ em { font-style: italic; }
 }
 @keyframes cue { to { transform: translateY(250%); } }
 .hero__cats { display: flex; gap: 22px; color: var(--ink-mute); font-size: 0.68rem; }
+/* the How it works page's two-line heading, a size down so the laptop keeps its room */
+.hero__title--tour { font-size: clamp(2.8rem, 5.6vw, 6.4rem); }
+
+/* ---------- Home hero: the laptop, and the flight into its screen (sections/intro.js) ---------- */
+/* The section is tall while the flight runs (.intro--live); the pin holds the view meanwhile. */
+.intro { display: block; min-height: 0; padding-top: 0; }
+.intro--live { height: calc(100vh + 150vh); height: calc(100lvh + 150vh); }
+.intro__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding-top: var(--nav-h);
+  overflow: hidden;
+}
+/* full height behind a phone's address bar (so the screen can cover it), copy kept above it */
+@supports (height: 1lvh) { .intro__pin { padding-bottom: calc(100lvh - 100svh); } }
+.intro__grid { position: absolute; height: 100%; }
+.intro .hero__copy { max-width: min(760px, 45%); }
+.intro__stage {
+  --content: min(100% - 2 * var(--gutter), var(--maxw) - 2 * var(--gutter));
+  position: absolute;
+  top: calc(var(--nav-h) + 12px);
+  bottom: 88px;
+  right: calc((100% - var(--content)) / 2);
+  width: calc(var(--content) * 0.54);
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+/* the image has room around the laptop for its soft shadow, so it may run past the stage a little */
+.lap { position: relative; flex: none; width: min(116cqw, 100cqh * 1.5449, 1040px); aspect-ratio: 2716 / 1758; }
+/* scaled about the display's centre */
+.lap__body { position: absolute; inset: 0; transform-origin: 50% 33.703%; }
+.lap__img { display: block; width: 100%; height: 100%; }
+/* the display (its place in the image: see SCREEN in intro.js); content sized to the screen */
+.lap__screen {
+  position: absolute;
+  left: 21.171%;
+  top: 5.859%;
+  width: 57.658%;
+  height: 55.688%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--paper);
+  container-type: size;
+}
+/* content + glass sheen: both fade for the dive, so the colour that fills the view is exact */
+.lap__ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(118deg, rgba(253, 248, 236, 0.07), rgba(253, 248, 236, 0) 42%);
+}
+.lap__mark { width: 21cqw; height: auto; aspect-ratio: 1586 / 975; color: var(--paper); --mark-accent: var(--orange); }
+.lap__line {
+  margin-top: 7cqh;
+  font-family: var(--display);
+  font-weight: 600;
+  font-stretch: 112%;
+  font-size: 5.6cqw;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.lap__meta { margin-top: 5cqh; min-height: 1.2em; font-size: 1.5cqw; letter-spacing: 0.12em; color: rgba(253, 248, 236, 0.6); }
+.lap__off { position: absolute; inset: 0; z-index: 1; background: #06090c; opacity: 0; }
 
 /* ---------- Process (fixed UI over the 3D story) ---------- */
 .process { position: relative; height: calc(var(--unit) * 8); }
@@ -606,6 +680,10 @@ em { font-style: italic; }
   text-wrap: balance;
 }
 .handoff__title em { color: var(--orange-2); }
+.handoff__text { max-width: 48ch; margin-top: clamp(22px, 2.6vw, 32px); color: rgba(253, 248, 236, 0.72); font-size: clamp(1rem, 1.2vw, 1.14rem); }
+.handoff__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 30px; margin-top: clamp(28px, 3.4vw, 44px); }
+/* home: straight on from the screen that filled the view, no empty screen before the heading */
+.handoff--home { min-height: 0; padding: clamp(96px, 16vh, 170px) 0 clamp(70px, 9vw, 130px); }
 /* With the 3D story running, the dark chapter slides up underneath the dive into the
    laptop (story.js): the handoff is see-through, so the display filling the viewport
    is the backdrop its heading rises onto. */
@@ -624,6 +702,7 @@ em { font-style: italic; }
 /* own layers while the story drives them: otherwise every frame of the reveal repaints the
    whole page (this long page takes a phone tens of milliseconds to repaint) */
 .has-story .handoff__line, .has-story .handoff .eyebrow { will-change: transform, opacity; }
+.has-story .handoff__actions { pointer-events: auto; }
 
 .equipment { position: relative; }
 .equipment__pin {
@@ -1229,6 +1308,17 @@ em { font-style: italic; }
   .hero__actions .btn--ghost::before { display: none; }
   .hero__foot { flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 14px; padding-bottom: 16px; }
   .hero__cats { display: none; }
+  .hero__title--tour { font-size: clamp(2.2rem, 9.8vw, 3.6rem); }
+
+  /* home hero: the laptop above the copy, in whatever room the copy leaves */
+  .intro--live { height: calc(100vh + 120vh); height: calc(100lvh + 120vh); }
+  .intro__pin { grid-template-rows: minmax(0, 1fr) auto auto; }
+  .intro__stage { position: relative; inset: auto; width: auto; grid-row: 1; padding: 12px var(--gutter) 2px; }
+  .intro .hero__grid { grid-row: 2; }
+  .intro .hero__foot { grid-row: 3; }
+  .intro .hero__copy { max-width: none; }
+  .lap { width: min(116cqw, 100cqh * 1.5449); }
+  .handoff__actions .btn { height: 48px; padding: 0 18px 0 20px; font-size: 0.74rem; }
 
   .process__shade {
     display: block;
@@ -1587,6 +1677,11 @@ em { font-style: italic; }
   .cat__art { max-width: 380px; justify-self: start; }
 
   .business--page .business__pin { padding-top: calc(var(--nav-h) + 16px); }
+}
+
+/* short phones: the scroll cue gives its room to the laptop */
+@media (max-width: 899px) and (max-height: 680px) {
+  .intro .hero__foot { display: none; }
 }
 
 /* Moving between pages: a quick cross-fade, where the browser supports it */

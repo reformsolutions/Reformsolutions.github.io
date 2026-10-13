@@ -1,14 +1,16 @@
 # Reform Solutions — website
 
-A scroll-driven site for Reform Solutions (IT asset refurbishment & lifecycle management): a home page that tells
-the story in 3D, and five pages that go into detail.
+A scroll-driven site for Reform Solutions (IT asset refurbishment & lifecycle management): a home page that opens
+with a laptop you scroll into, a How it works page that follows one laptop across the bench in 3D, and five pages
+that go into detail.
 It is plain HTML/CSS/JS with no build step, so it runs on GitHub Pages as-is.
 
 ## Pages
 
 | Page | Address | What it's for |
 | --- | --- | --- |
-| Home | `/` (`index.html`) | The story: one laptop across the bench in 3D, then every section in brief. Each section links on to its page. |
+| Home | `/` (`index.html`) | Opens with a laptop showing our logo; scrolling flies into its screen and the page carries on from inside it. Then every section in brief, each linking on to its page. No 3D here, so it stays smooth on phones. |
+| How it works | `/how-it-works/` | The 3D story: one laptop across the bench, stage by stage, then a dive into its screen (see below). The only page that loads the 3D bench. Linked from the home page, the Process page and every footer. |
 | Process | `/process/` | The seven refurbishment stages in full. A cable runs down beside them and its plug stops at each stage's node as it comes up the screen (`sections/stages.js`). |
 | Equipment | `/equipment/` | The six kinds of hardware, each with its line drawing, then grading, volume, warranty and who buys. |
 | For business | `/business/` | Selling or retiring IT (IT asset disposal): the same cable route as the home page opens the page, then what we take, data, getting a valuation, sustainability and questions. |
@@ -19,13 +21,14 @@ The nav links to Process, Equipment, For business, About and FAQ; Sustainability
 (and "Get a quote" opens the contact page).
 
 The inner pages share the home page's styles, nav, footer and WhatsApp button, and start with `assets/js/page.js`
-(no 3D bench, no preloader), so they load quickly. Moving between pages cross-fades in browsers that support it.
+(no 3D bench, no preloader), so they load quickly. How it works starts with `assets/js/tour.js` instead (the
+preloader and the 3D bench). Moving between pages cross-fades in browsers that support it.
 Each page is its own HTML file, so blocks used on several pages are repeated in each:
 
-- the nav, mobile menu, footer, WhatsApp button and the symbols at the top of `<body>`: in all six pages;
+- the nav, mobile menu, footer, WhatsApp button and the symbols at the top of `<body>`: in all seven pages;
 - the enquiry form: in `index.html` and `contact/index.html` (keep the two the same);
 - the company's details for search engines (the `Organization` entry): in `index.html` and `about/index.html`;
-- copy that also appears on the home page (process stages, equipment, grades, the business route, FAQ answers,
+- copy that also appears on the home page or How it works (process stages, equipment, grades, the business route, FAQ answers,
   clients, principles, sustainability, the About figures): change it on every page that shows it. Search the
   folder for a phrase.
 
@@ -33,7 +36,7 @@ Each page is its own HTML file, so blocks used on several pages are repeated in 
 
 | Section | What happens |
 | --- | --- |
-| Hero → Process | A procedurally built 3D laptop (Three.js) is followed through the bench: sourcing, inspection (scan line), hardware testing (exploded view), data sanitization (SSD wipe), cleaning (brush pass), grading (stamp) and QC. The camera then dives into the laptop's screen, and the next section's heading rises onto it (the dark section slides up under the dive with a see-through top). |
+| Hero | A laptop on the bench with the logo on its screen, which powers on as the page loads. The laptop is a still image rendered from the 3D bench's own model (`assets/img/laptop-*.webp`); the screen's logo and text are HTML laid exactly over the display, so they stay sharp. Scrolling flies into the screen (`sections/intro.js`) until the display fills the view. It's the dark section's colour, so the page carries on from inside the screen: "Every machine we sell crosses the same bench", with a link to How it works. |
 | Equipment | Pinned horizontal track. Isometric line drawings draw themselves in while an RJ45 plug (from the logo) pulls the cable along. |
 | For business | The logo's cable winds through the ITAD steps and forks into Reuse / Recycle. On phones the steps stack and the cable runs down beside them, drawn at a steady pace with the scroll; the plug leads in the lower-middle of the screen, clear of browser toolbars. |
 | About | Who Reform Solutions is, in a paragraph that names the company and what it does (search engines read this), with four figures underneath (6 kinds of hardware, 7 stages, 3 grades, 1 standard) and a link to the About page. |
@@ -87,7 +90,7 @@ structured data).
   files); on the other pages, where the page sits in the site (Home › Process), which Google can show in results.
   When the company has profiles elsewhere (Google Business Profile, LinkedIn, IndiaMART…), list their addresses in a
   `"sameAs": [ … ]` line in that entry, so search engines connect them to the site.
-- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists all six pages.
+- `robots.txt` lets search engines crawl everything and points them to `sitemap.xml`, which lists all seven pages.
   After a real content change, update that page's `<lastmod>`; add a `<url>` block for any new page.
 - Pages link to each other (nav, footer, the home page's "more" links), so search engines find them all.
 - `googleb504f5b93f3b3496.html` proves to Google Search Console that the site is ours: keep it.
@@ -106,6 +109,19 @@ Then in [Bing Webmaster Tools](https://www.bing.com/webmasters), import the site
 also appear on Yahoo and DuckDuckGo). For local searches and Google Maps, set up a free
 [Google Business Profile](https://www.google.com/business/).
 
+## The 3D story (How it works)
+
+A procedurally built 3D laptop (Three.js) is followed through the bench: sourcing, inspection (scan line),
+hardware testing (exploded view), data sanitization (SSD wipe), cleaning (brush pass), grading (stamp) and QC.
+The camera then dives into the laptop's screen, and "That was one laptop…" rises onto it with links to a stock list
+and the equipment (the dark section slides up under the dive with a see-through top).
+
+The home page's laptop image comes from this model: rendered square-on with the lid at 90°, the screen blank in
+the site's night colour, cropped with room for its shadow and saved as WebP at 900, 1400 and 2000 px wide. If the
+model changes, render it again, then update where the display sits in the image: `SCREEN` in
+`assets/js/sections/intro.js`, and `.lap`'s aspect ratio, `.lap__body`'s transform origin and `.lap__screen`'s
+position in `main.css`.
+
 ## How the 3D stays out of the way of the text
 
 The story (`assets/js/story.js`) measures a "safe rectangle" for each moment — the band above the hero copy
@@ -119,6 +135,8 @@ field in `CALLOUTS`, `story.js`). Give a new label the stage it shares the scree
 
 ## Performance notes
 
+- The home page loads no 3D: its laptop is one image (about 15–40 KB) moved with transforms, and the 3D story
+  is on its own page. Lighthouse's phone test went from 56 to 92 for the home page when the 3D moved.
 - `vendor/three.min.js` is a trimmed three.js build (see `vendor/README.md`).
 - The 3D canvas renders only when something changes; the idle hero float runs at 30fps.
 - Draw calls are kept low: static laptop parts that share a material are baked into one mesh
@@ -207,15 +225,18 @@ field's `name` is the label used in the email.
 ```
 index.html                 the home page: all its content and copy
 process/, equipment/,      the inner pages (each an index.html, served at /process/ and so on)
-business/, about/, contact/
+business/, about/,
+contact/, how-it-works/
 assets/css/main.css        design system, layout, responsive rules (inner pages near the end)
-assets/js/main.js          home page boot sequence
+assets/js/main.js          home page boot sequence (no 3D)
+assets/js/tour.js          How it works page boot sequence (preloader + 3D bench)
 assets/js/page.js          inner pages' boot sequence
-assets/js/story.js         scroll timeline for the 3D bench (stage timings, cameras, callouts)
+assets/js/story.js         How it works: scroll timeline for the 3D bench (stage timings, cameras, callouts)
 assets/js/bench/           3D scene: laptop model, screen UI, procedural textures, renderer
-assets/js/sections/        equipment track + isometric art, business route, process stages, footer particles
+assets/js/sections/        home hero laptop (intro.js), equipment track + isometric art, business route, process stages, footer particles
 assets/js/ui.js            nav, menu, links, reveals, FAQ, form, sustainability loop
 assets/img/brand.svg       vector logo (traced from the original artwork) used across the site
+assets/img/laptop-*.webp   the home hero's laptop (rendered from the 3D model; see The 3D story)
 vendor/                    three.js r186 (trimmed), GSAP 3.15 (+ plugins), Lenis 1.3 — see vendor/README.md
 google-apps-script/        the enquiry form's backend (paste into Google Apps Script; see Enquiry form)
 CNAME                      the custom domain (see Publishing)
@@ -227,9 +248,9 @@ serve.mjs                  local preview server (not needed on GitHub Pages)
 ## Accessibility and fallbacks
 
 - `prefers-reduced-motion` turns off smooth scrolling, idle motion and decorative animations.
-- Without WebGL, the seven process stages render as a normal readable list.
+- Without WebGL, How it works shows the seven stages as a normal readable list.
 - Headings, landmarks, labelled form fields and keyboard-operable FAQ are in place.
-- Append `?nowebgl` to the URL to preview the fallback, or `?debug` to expose the 3D state in the console.
+- Append `?nowebgl` to the How it works address to preview the fallback, or `?debug` to expose the 3D state in the console.
 
 ## Credits and licences
 

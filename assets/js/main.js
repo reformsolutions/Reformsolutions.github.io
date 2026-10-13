@@ -1,7 +1,8 @@
-// Reform Solutions — site bootstrap.
+// Reform Solutions — home page bootstrap.
+// The opening laptop is a still image with plain transforms (sections/intro.js); the 3D bench
+// story is on /how-it-works/ (tour.js), so this page loads no 3D at all.
 import { createPreloader } from './preloader.js';
-import { createBench, supportsWebGL } from './bench/bench.js';
-import { initStory } from './story.js';
+import { initIntro } from './sections/intro.js';
 import { initEquipment } from './sections/equipment.js';
 import { initRoute } from './sections/route.js';
 import { initParticles } from './sections/particles.js';
@@ -41,7 +42,7 @@ function firstVisit() {
 async function boot() {
   root.classList.add('js-ready');
   const pre = createPreloader({ reduced, quick: !firstVisit() });
-  pre.progress(0.12, 'Preparing the bench');
+  pre.progress(0.15);
 
   // Smooth scrolling (skipped for reduced motion)
   let lenis = null;
@@ -57,38 +58,15 @@ async function boot() {
   const hash = location.hash;
   window.scrollTo(0, 0);
 
-  // Fonts affect line breaks and canvas labels, so wait (briefly) for them.
-  await Promise.race([document.fonts.ready, wait(2500)]);
-  pre.progress(0.35, 'Unpacking the next unit');
-
-  // 3D bench
-  let bench = null;
-  if (supportsWebGL() && !/[?&]nowebgl\b/.test(location.search)) {
-    bench = safe('bench', () => createBench({
-      canvas: document.querySelector('.bench'),
-      layer: document.querySelector('.callouts'),
-      isMobile,
-      reduced,
-    }));
-  }
-  if (!bench) root.classList.add('no-webgl');
-  if (/[?&]debug\b/.test(location.search)) {
-    window.__rs = { bench, lenis };
-    window.__lenis = lenis;
-  }
-  pre.progress(0.6, 'Running diagnostics');
+  // Fonts set the line breaks and the laptop is the hero, so wait (briefly) for both.
+  const img = document.querySelector('.lap__img');
+  await Promise.race([Promise.all([document.fonts.ready, img?.decode?.().catch(() => {})]), wait(2500)]);
+  pre.progress(0.7);
+  if (/[?&]debug\b/.test(location.search)) window.__lenis = lenis;
 
   const nav = initNav({ lenis });
   initAnchors({ lenis, nav });
-  let warming = null;
-  if (bench) {
-    const ok = safe('story', () => initStory({ bench, lenis, isMobile, reduced, onDark: (d) => nav.setStoryDark(d) }));
-    if (ok) warming = bench.warm();
-    else {
-      bench.setActive(false);
-      root.classList.add('no-webgl');
-    }
-  }
+  const intro = safe('intro', () => initIntro({ reduced, onDark: (d) => nav.setStoryDark(d) }));
   safe('equipment', () => initEquipment({ reduced }));
   safe('route', () => initRoute({ reduced, isMobile }));
   safe('particles', () => initParticles({ reduced }));
@@ -99,14 +77,13 @@ async function boot() {
   document.querySelectorAll('[data-year]').forEach((el) => (el.textContent = new Date().getFullYear()));
 
   ScrollTrigger.refresh();
-  // shaders compile in parallel where the GPU driver allows; never wait more than ~1.5s
-  if (warming) await Promise.race([warming.catch(() => {}), wait(1500)]);
   pre.progress(1);
   await pre.finish();
   document.querySelector('.wa')?.classList.add('is-in'); // the WhatsApp button comes in with the page
 
   lenis?.start();
-  heroIntro({ bench, reduced });
+  heroIntro({ bench: null, reduced });
+  intro?.boot();
 
   if (hash && hash.length > 1) {
     const target = document.querySelector(hash);
@@ -122,7 +99,10 @@ async function boot() {
 
 boot().catch((err) => {
   console.error(err);
-  root.classList.add('js-ready', 'no-webgl');
+  root.classList.add('js-ready');
   document.querySelector('.preloader')?.remove();
   document.querySelector('.wa')?.classList.add('is-in');
+  // never leave the hero switched off
+  document.querySelectorAll('.lap, .lap__mark, .lap__line').forEach((el) => (el.style.visibility = el.style.opacity = ''));
+  document.querySelector('.lap__off')?.style.setProperty('display', 'none');
 });

@@ -283,6 +283,9 @@ function initHandoff({ bench, tl, reduced }) {
       },
     });
   }
+  // what to do next (links), once the heading has landed
+  const actions = handoff.querySelector('.handoff__actions');
+  if (actions) tl.fromTo(actions, { autoAlpha: 0, y: reduced ? 0 : 14 }, { autoAlpha: 1, y: 0, duration: 0.1, ease: 'power2.out' }, 7.86);
   document.documentElement.classList.add('has-story');
 
   // Keep rendering until the solid part of the dark chapter covers the fixed canvas
