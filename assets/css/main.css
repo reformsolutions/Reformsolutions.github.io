@@ -1016,6 +1016,8 @@ em { font-style: italic; }
 .contact__details dt { color: var(--ink-mute); font-size: 0.68rem; }
 .contact__details a { border-bottom: 1px solid transparent; transition: border-color 0.3s; }
 .contact__details a:hover { border-color: var(--orange); }
+/* a second number under the first, in the value column (one "Phone" label, two numbers) */
+.contact__details dd + dd { grid-column: 2; margin-top: 10px; }
 
 .enquiry { display: grid; gap: 22px; }
 .enquiry__intent { border: 0; margin: 0 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
